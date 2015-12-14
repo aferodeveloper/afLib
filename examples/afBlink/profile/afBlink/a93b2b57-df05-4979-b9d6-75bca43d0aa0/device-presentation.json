@@ -1,0 +1,82 @@
+{
+	"active": true,
+	"createdTimestamp": 1450041367806,
+	"deviceProfileId": "af353f7c-e084-4bdb-b19c-37e696c7c4d2",
+	"friendlyName": "Default Presentation",
+	"presentationDefinition": {
+		"attributeOptions": {
+			"1": {
+				"flags": [
+					"primaryOperation"
+				],
+				"label": "Blink",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "Off",
+							"state": "standby"
+						},
+						"match": "0"
+					},
+					{
+						"apply": {
+							"label": "On",
+							"state": "running"
+						},
+						"match": "1"
+					}
+				]
+			}
+		},
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1
+				},
+				"controlType": "menuControl",
+				"id": 1
+			}
+		],
+		"gauge": {
+			"background": {
+				"images": []
+			},
+			"displayRules": [],
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_light.png"
+					}
+				]
+			}
+		},
+		"groups": [
+			{
+				"controls": [
+					1
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_light.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"id": 1449612955889,
+				"label": "Blink"
+			}
+		],
+		"label": "Blink"
+	},
+	"presentationId": "a93b2b57-df05-4979-b9d6-75bca43d0aa0",
+	"valid": true
+}

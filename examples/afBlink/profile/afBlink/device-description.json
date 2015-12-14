@@ -1,0 +1,139 @@
+{
+	"deviceDescriptionId": "95343625-7bb4-4595-a0ea-ffc699127c72",
+	"partnerId": "8e506a10-95d2-4472-a073-7d1e3d6b5550",
+	"schemaVersion": 2,
+	"services": [
+		{
+			"id": 1,
+			"attributes": [
+				{
+					"id": 1,
+					"dataType": "BOOLEAN",
+					"semanticType": "Blink",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"length": 1
+				},
+				{
+					"id": 1024,
+					"dataType": "SINT16",
+					"semanticType": "Modulo LED",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"defaultValue": "0100",
+					"length": 2
+				},
+				{
+					"id": 1025,
+					"dataType": "SINT64",
+					"semanticType": "GPIO 0 Configuration",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "0000000000000000",
+					"length": 8
+				},
+				{
+					"id": 1030,
+					"dataType": "SINT16",
+					"semanticType": "Modulo Button",
+					"operations": [
+						"READ"
+					],
+					"length": 2
+				},
+				{
+					"id": 1031,
+					"dataType": "SINT64",
+					"semanticType": "GPIO 3 Configuration",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "4500000000000000",
+					"length": 8
+				},
+				{
+					"id": 2001,
+					"dataType": "SINT64",
+					"semanticType": "Bootloader Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2002,
+					"dataType": "SINT64",
+					"semanticType": "Soft Device Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2003,
+					"dataType": "SINT64",
+					"semanticType": "Application Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2004,
+					"dataType": "SINT64",
+					"semanticType": "Device Profile Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 60000,
+					"dataType": "BOOLEAN",
+					"semanticType": "Security Enabled",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "01",
+					"length": 1
+				},
+				{
+					"id": 65019,
+					"dataType": "UTF8S",
+					"semanticType": "Reboot Reason",
+					"operations": [
+						"READ"
+					],
+					"length": 64
+				},
+				{
+					"id": 65020,
+					"dataType": "BYTES",
+					"semanticType": "BLE Comms",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"defaultValue": "FA000000180018000C00A00F",
+					"length": 12
+				},
+				{
+					"id": 65021,
+					"dataType": "BOOLEAN",
+					"semanticType": "SPI Enabled",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "01",
+					"length": 1
+				}
+			]
+		}
+	],
+	"createdTimestamp": 1450041367200
+}

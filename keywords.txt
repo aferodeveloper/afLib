@@ -1,0 +1,25 @@
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+afLib			        KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+loop			        KEYWORD2
+getAttribute	        KEYWORD2
+setAttribute	        KEYWORD2
+setAttributeComplete	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+afSUCCESS                   LITERAL1
+afERROR_NO_SUCH_ATTRIBUTE	LITERAL1
+afERROR_BUSY				LITERAL1
+afERROR_INVALID_COMMAND		LITERAL1
+afERROR_QUEUE_OVERFLOW      LITERAL1
+afERROR_QUEUE_UNDERFLOW     LITERAL1
