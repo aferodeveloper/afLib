@@ -14,7 +14,7 @@ This version of the library has been tested against *UNO* and *Teensy*.
 
 <http://developer.afero.io>
 
-### LICENSE ###
+### License ###
 
 Copyright 2015 Afero, Inc.
 
