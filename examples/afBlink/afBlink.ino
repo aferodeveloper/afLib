@@ -44,7 +44,10 @@
 #define LED_OFF                   1
 #define LED_ON                    0
 
-#define BLINK_INTERVAL 1000
+// Blink as fast as we can. There is a minimum time between requests defined
+// by the afLib. We can send requests slower than this, but try not to send
+// requests faster than this so the ASR doesn't get overwhelmed.
+#define BLINK_INTERVAL            afMINIMUM_TIME_BETWEEN_REQUESTS
 
 /**
  * afLib Stuff
@@ -152,7 +155,7 @@ void setModuloLED(bool on) {
   if (moduloLEDIsOn != on) {
     uint16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
     if (aflib->setAttribute(AF_MODULO_LED, attrVal) != afSUCCESS) {
-      Serial.println("Cound not set LED");
+      Serial.println("Could not set LED");
     }
     moduloLEDIsOn = on;
   }

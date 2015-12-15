@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.8.70**
+**Version 0.8.71**
 
 ## Welcome ##
 

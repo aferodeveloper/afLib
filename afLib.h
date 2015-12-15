@@ -30,6 +30,8 @@
 #define STATE_RECV_BYTES        5
 #define STATE_CMD_COMPLETE      6
 
+#define afMINIMUM_TIME_BETWEEN_REQUESTS	1000
+
 #define SPI_FRAME_LEN			16
 
 #define REQUEST_QUEUE_SIZE     	5
