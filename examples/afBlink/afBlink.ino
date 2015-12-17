@@ -15,7 +15,7 @@
  */
 
 #include <SPI.h>
-#include <afLib.h>
+#include <iafLib.h>
 
 // Include the constants required to access attribute ids from your profile.
 #include "profile/afBlink/device-description.h"
@@ -52,98 +52,104 @@
 /**
  * afLib Stuff
  */
-afLib *aflib;
+iafLib *aflib;
 volatile long lastBlink = 0;
 volatile bool blinking = false;
 volatile bool moduloLEDIsOn = false;      // Track whether the Modulo LED is on
 volatile uint16_t moduleButtonValue = 1;  // Track the button value so we know when it has changed
 
 void setup() {
-  Serial.begin(BAUD_RATE);
+    Serial.begin(BAUD_RATE);
 
-  // Serial takes a bit to startup on Teensy...
+    // Serial takes a bit to startup on Teensy...
 #ifdef TEENSY
-  delay(1000);
+    delay(1000);
 #endif
 
-  Serial.println("Hello World");
+    Serial.println("Hello World");
 
-  // The Plinto board automatically connects reset on UNO to reset on Modulo
-  // For Teensy, we need to reset manually...
+    // The Plinto board automatically connects reset on UNO to reset on Modulo
+    // For Teensy, we need to reset manually...
 #ifdef TEENSY
-  Serial.println("Using Teensy - Resetting Modulo");
-  pinMode(RESET, OUTPUT);
-  digitalWrite(RESET, 0);
-  delay(250);
-  digitalWrite(RESET, 1);
+    Serial.println("Using Teensy - Resetting Modulo");
+    pinMode(RESET, OUTPUT);
+    digitalWrite(RESET, 0);
+    delay(250);
+    digitalWrite(RESET, 1);
 #endif
 
-  // Initialize the afLib
-  // Just need to configure a few things:
-  // CS_PIN - the pin to use for chip select
-  // INT_PIN - the pin used slave interrupt
-  // onAttrSet - the function to be called when one of your attributes has been set.
-  // onAttrSetComplete - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
-  aflib = new afLib(CS_PIN, digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete);
+    // Initialize the afLib
+    // Just need to configure a few things:
+    // CS_PIN - the pin to use for chip select
+    // INT_PIN - the pin used slave interrupt
+    // onAttrSet - the function to be called when one of your attributes has been set.
+    // onAttrSetComplete - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
+    aflib = iafLib::create(CS_PIN, digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete);
 }
 
 void loop() {
-  if (blinking) {
-    if (millis() - lastBlink > BLINK_INTERVAL) {
-      toggleModuloLED();
-      lastBlink = millis();
+    if (blinking) {
+        if (millis() - lastBlink > BLINK_INTERVAL) {
+            toggleModuloLED();
+            lastBlink = millis();
+        }
+    } else {
+        setModuloLED(false);
     }
-  } else {
-      setModuloLED(false);
-  }
 
-  // Give the afLib state machine some time.
-  aflib->loop();
+    // Give the afLib state machine some time.
+    aflib->loop();
 }
 
 // This is called when the service changes one of our attributes.
-void onAttrSet(uint8_t requestId, uint16_t attributeId, uint16_t valueLen, uint8_t *value) {
-  Serial.print("onAttrSet id: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(*value);
+void onAttrSet(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    Serial.print("onAttrSet id: ");
+    Serial.print(attributeId);
+    Serial.print(" value: ");
+    Serial.println(*value);
 
-  switch (attributeId) {
-    // This MCU attribute tells us whether we should be blinking.
-    case AF_BLINK:
-      blinking = (*value == 1);
-      break;
+    switch (attributeId) {
+        // This MCU attribute tells us whether we should be blinking.
+        case AF_BLINK:
+            blinking = (*value == 1);
+            break;
 
-    default:
-      break;
-  }
-  if (aflib->setAttributeComplete(requestId, attributeId, valueLen, value) != afSUCCESS) {
-    Serial.println("setAttributeComplete failed!");
-  }
+        default:
+            break;
+    }
+    if (aflib->setAttributeComplete(requestId, attributeId, valueLen, value) != afSUCCESS) {
+        Serial.println("setAttributeComplete failed!");
+    }
 }
 
 // This is called when either an Afero attribute has been changed via setAttribute or in response
 // to a getAttribute call.
-void onAttrSetComplete(uint8_t requestId, uint16_t attributeId, uint8_t *value) {
-  Serial.print("onAttrSetComplete id: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(*value);
+void onAttrSetComplete(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    Serial.print("onAttrSetComplete id: ");
+    Serial.print(attributeId);
+    Serial.print(" value: ");
+    Serial.println(*value);
     switch (attributeId) {
-      // Update the state of the LED based on the actual attribute value.
-      case AF_MODULO_LED:
-        moduloLEDIsOn = (*value == 0);
-        break;
+        // Update the state of the LED based on the actual attribute value.
+        case AF_MODULO_LED:
+            moduloLEDIsOn = (*value == 0);
+            break;
 
-      // Allow the button on Modulo to control our blinking state.
-      case AF_MODULO_BUTTON: {
-        uint16_t *buttonValue = (uint16_t *)value;
-        if (moduleButtonValue != *buttonValue) {
-          moduleButtonValue = *buttonValue;
-          blinking = !blinking;
-          if (aflib->setAttribute(AF_BLINK, (uint8_t)blinking) != afSUCCESS) {
-            Serial.println("Could not set BLINK");
-          }
+            // Allow the button on Modulo to control our blinking state.
+        case AF_MODULO_BUTTON: {
+            uint16_t *buttonValue = (uint16_t *) value;
+            if (moduleButtonValue != *buttonValue) {
+                moduleButtonValue = *buttonValue;
+                blinking = !blinking;
+                if (aflib->setAttribute(AF_BLINK, blinking) != afSUCCESS) {
+                    Serial.println("Could not set BLINK");
+                }
+            }
         }
-      }
-        break;
+            break;
 
-      default:
-        break;
+        default:
+            break;
     }
 }
 
@@ -152,13 +158,13 @@ void toggleModuloLED() {
 }
 
 void setModuloLED(bool on) {
-  if (moduloLEDIsOn != on) {
-    uint16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
-    if (aflib->setAttribute(AF_MODULO_LED, attrVal) != afSUCCESS) {
-      Serial.println("Could not set LED");
+    if (moduloLEDIsOn != on) {
+        int16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
+        if (aflib->setAttribute(AF_MODULO_LED, attrVal) != afSUCCESS) {
+            Serial.println("Could not set LED");
+        }
+        moduloLEDIsOn = on;
     }
-    moduloLEDIsOn = on;
-  }
 }
 
 // Define this wrapper to allow the instance method to be called
@@ -166,7 +172,7 @@ void setModuloLED(bool on) {
 // requires a method with no parameters and the instance method
 // has an invisible parameter (this).
 void ISRWrapper() {
-  if (aflib) {
-    aflib->mcuISR();
-  }
+    if (aflib) {
+        aflib->mcuISR();
+    }
 }

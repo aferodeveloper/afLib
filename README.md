@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.8.71**
+**Version 0.8.75**
 
 ## Welcome ##
 
@@ -13,13 +13,3 @@ This version of the library has been tested against *UNO* and *Teensy*.
 ### More Information ###
 
 <http://developer.afero.io>
-
-### License ###
-
-Copyright 2015 Afero, Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at:
-
-<http://www.apache.org/licenses/LICENSE-2.0>

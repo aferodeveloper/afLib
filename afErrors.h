@@ -17,11 +17,12 @@
 #ifndef AF_ERRORS_H__
 #define AF_ERRORS_H__
 
-#define afSUCCESS					 0	// Operation completed successfully
-#define afERROR_NO_SUCH_ATTRIBUTE	-1	// Request was made for unknown attribute id
-#define afERROR_BUSY				-2	// Request already in progress, try again
-#define afERROR_INVALID_COMMAND		-3	// Command could not be parsed
-#define afERROR_QUEUE_OVERFLOW      -4  // Queue is full
-#define afERROR_QUEUE_UNDERFLOW     -5  // Queue is empty
+#define afSUCCESS                    0    // Operation completed successfully
+#define afERROR_NO_SUCH_ATTRIBUTE   -1    // Request was made for unknown attribute id
+#define afERROR_BUSY                -2    // Request already in progress, try again
+#define afERROR_INVALID_COMMAND     -3    // Command could not be parsed
+#define afERROR_QUEUE_OVERFLOW      -4    // Queue is full
+#define afERROR_QUEUE_UNDERFLOW     -5    // Queue is empty
+#define afERROR_INVALID_PARAM       -6    // Bad input parameter
 
 #endif // AF_ERRORS_H__

@@ -20,29 +20,46 @@
 #include "Arduino.h"
 
 class StatusCommand {
-  public:
+public:
     StatusCommand();
+
     StatusCommand(uint16_t bytesToSend);
+
     ~StatusCommand();
+
     uint16_t getSize();
+
     uint16_t getBytes(int *bytes);
+
     uint8_t calcChecksum();
+
     void setChecksum(uint8_t checksum);
+
     uint8_t getChecksum();
+
     void setAck(bool ack);
+
     void setBytesToSend(uint16_t bytesToSend);
+
     uint16_t getBytesToSend();
+
     void setBytesToRecv(uint16_t bytesToRecv);
+
     uint16_t getBytesToRecv();
+
     bool equals(StatusCommand *statusCommand);
+
     bool isValid();
+
     void dump();
+
     void dumpBytes();
-  private:
-    uint8_t   _cmd;
-    uint16_t  _bytesToSend;
-    uint16_t  _bytesToRecv;
-    uint8_t   _checksum;
+
+private:
+    uint8_t     _cmd;
+    uint16_t    _bytesToSend;
+    uint16_t    _bytesToRecv;
+    uint8_t     _checksum;
 };
 
 #endif // STATUS_COMMAND_H__

@@ -29,33 +29,49 @@
 #define UPDATE_REASON_REBOOT                5
 
 class Command {
-  public:
+public:
     Command(uint16_t len, uint8_t *bytes);
+
     Command(uint8_t requestId, const char *str);
+
     Command(uint8_t requestId, uint8_t cmd, uint16_t attrId);
+
     Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint16_t valueLen, uint8_t *value);
-    Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint8_t status, uint8_t reason, uint16_t valueLen, uint8_t *value);
+
+    Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint8_t status, uint8_t reason, uint16_t valueLen,
+            uint8_t *value);
 
     Command();
+
     ~Command();
-    
+
     uint8_t getCommand();
+
     uint8_t getReqId();
+
     uint16_t getAttrId();
+
     uint16_t getValueLen();
+
     void getValue(uint8_t *value);
+
     uint16_t getSize();
+
     uint16_t getBytes(uint8_t *bytes);
 
     bool isValid();
 
     void dump();
+
     void dumpBytes();
-  private:
+
+private:
     int strToValue(char *valueStr, uint8_t *value);
+
     uint8_t strToCmd(char *cmdStr);
+
     uint16_t strToAttrId(char *attrIdStr);
-    
+
     uint16_t _len;
     uint8_t _cmd;
     uint8_t _requestId;
@@ -64,7 +80,7 @@ class Command {
     uint8_t _reason;
     uint16_t _valueLen;
     uint8_t *_value;
-    
+
     char _printBuf[256];
 
 };
