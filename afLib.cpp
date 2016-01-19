@@ -44,6 +44,8 @@ afLib::afLib(const int chipSelect, const int mcuInterrupt, isr isrWrapper,
     _writeCmd = NULL;
     _writeCmdOffset = 0;
 
+    _outstandingSetAttrId = 0;
+
     _readCmd = NULL;
     _readCmdOffset = 0;
     _readBufferLen = 0;
@@ -224,6 +226,8 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
         return afERROR_INVALID_COMMAND;
     }
 
+    _outstandingSetAttrId = attrId;
+
     // Start the transmission.
     sendCommand();
 
@@ -370,21 +374,25 @@ void afLib::checkInterrupt(void) {
                 _state = STATE_IDLE;
                 printState(_state);
                 if (_readCmd != NULL) {
-                    byte val;
-                    _readCmd->getValue(&val);
+                    byte *val = new byte[_readCmd->getValueLen()];
+                    _readCmd->getValue(val);
 
                     switch (_readCmd->getCommand()) {
                         case MSG_TYPE_SET:
-                            _onAttrSet(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), &val);
+                            _onAttrSet(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
                             break;
 
                         case MSG_TYPE_UPDATE:
-                            _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), &val);
+                            if (_readCmd->getAttrId() == _outstandingSetAttrId) {
+                                _outstandingSetAttrId = 0;
+                            }
+                            _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
                             break;
 
                         default:
                             break;
                     }
+                    delete (val);
                     delete (_readCmd);
                     _readCmdOffset = 0;
                     _readCmd = NULL;
@@ -521,7 +529,7 @@ void afLib::onIdle() {
 }
 
 bool afLib::isIdle() {
-    return _interrupts_pending == 0 && _state == STATE_IDLE;
+    return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetAttrId == 0;
 }
 
 void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {

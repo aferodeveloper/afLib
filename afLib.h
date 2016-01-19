@@ -80,6 +80,7 @@ private:
     uint16_t _bytesToSend;
     uint16_t _bytesToRecv;
     int _requestId;
+    uint16_t _outstandingSetAttrId;
 
     // Application Callbacks.
     onAttributeSet _onAttrSet;
