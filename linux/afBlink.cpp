@@ -83,7 +83,7 @@ void onAttributeSetComplete_callback(const uint8_t requestId, const uint16_t att
             if (moduleButtonValue != *buttonValue) {
                 moduleButtonValue = *buttonValue;
                 blinking = !blinking;
-                if (theLib->setAttribute(AF_BLINK, blinking) != afSUCCESS) {
+                if (theLib->setAttributeBool(AF_BLINK, blinking) != afSUCCESS) {
                     fprintf(stderr,"Could not set BLINK\n");
                 }
             }
@@ -98,7 +98,7 @@ void onAttributeSetComplete_callback(const uint8_t requestId, const uint16_t att
 void setModuloLED(int on) {
     if (moduloLEDIsOn != on) {
         int16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
-        if (theLib->setAttribute(AF_MODULO_LED, attrVal) != afSUCCESS) {
+        if (theLib->setAttribute16(AF_MODULO_LED, attrVal) != afSUCCESS) {
             printf("Could not set LED\n");
         }
         moduloLEDIsOn = on;
