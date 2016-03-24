@@ -1,7 +1,7 @@
 {
 	"active": true,
-	"createdTimestamp": 1450041367806,
-	"deviceProfileId": "af353f7c-e084-4bdb-b19c-37e696c7c4d2",
+	"createdTimestamp": 1456436510839,
+	"deviceProfileId": "18d27bfa-3f4a-4e12-b954-486991b5ea91",
 	"friendlyName": "Default Presentation",
 	"presentationDefinition": {
 		"attributeOptions": {
@@ -77,6 +77,6 @@
 		],
 		"label": "Blink"
 	},
-	"presentationId": "a93b2b57-df05-4979-b9d6-75bca43d0aa0",
+	"presentationId": "b0f6bb26-2e89-46ce-8549-54a55a0d4220",
 	"valid": true
 }

@@ -21,6 +21,7 @@
 #include "SPI.h"
 #include "Command.h"
 #include "StatusCommand.h"
+#include "afSPI.h"
 
 #define STATE_IDLE                          0
 #define STATE_STATUS_SYNC                   1
@@ -43,22 +44,22 @@ typedef struct {
 
 class afLib : public iafLib {
 public:
-    afLib(const int chipSelect, const int mcuInterrupt, isr isrWrapper,
-          onAttributeSet attrSet, onAttributeSetComplete attrSetComplete);
+    afLib(const int mcuInterrupt, isr isrWrapper,
+          onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *serial, afSPI *theSPI);
 
     virtual void loop(void);
 
     virtual int getAttribute(const uint16_t attrId);
 
-    virtual int setAttribute(const uint16_t attrId, const bool value);
+    virtual int setAttributeBool(const uint16_t attrId, const bool value);
 
-    virtual int setAttribute(const uint16_t attrId, const int8_t value);
+    virtual int setAttribute8(const uint16_t attrId, const int8_t value);
 
-    virtual int setAttribute(const uint16_t attrId, const int16_t value);
+    virtual int setAttribute16(const uint16_t attrId, const int16_t value);
 
-    virtual int setAttribute(const uint16_t attrId, const int32_t value);
+    virtual int setAttribute32(const uint16_t attrId, const int32_t value);
 
-    virtual int setAttribute(const uint16_t attrId, const int64_t value);
+    virtual int setAttribute64(const uint16_t attrId, const int64_t value);
 
     virtual int setAttribute(const uint16_t attrId, const String &value);
 
@@ -73,14 +74,16 @@ public:
     virtual void mcuISR();
 
 private:
-    SPISettings _spiSettings;
-    int _chipSelect;
+    Stream *_theLog;
+    afSPI *_theSPI;
+
+    //SPISettings _spiSettings;
     volatile int _interrupts_pending;
     int _state;
     uint16_t _bytesToSend;
     uint16_t _bytesToRecv;
-    int _requestId;
-    uint16_t _outstandingSetAttrId;
+    uint8_t _requestId;
+    uint16_t _outstandingSetGetAttrId;
 
     // Application Callbacks.
     onAttributeSet _onAttrSet;
@@ -111,9 +114,9 @@ private:
 
     void printState(int state);
 
-    void beginSPI();
+    //void beginSPI();
 
-    void endSPI();
+    //void endSPI();
 
     int exchangeStatus(StatusCommand *tx, StatusCommand *rx);
 

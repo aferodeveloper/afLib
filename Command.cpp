@@ -24,9 +24,9 @@
 
 const char *CMD_NAMES[] = {"SET   ", "GET   ", "UPDATE"};
 
-byte getVal(char c);
 
-Command::Command(uint16_t len, uint8_t *bytes) {
+Command::Command(Stream *serial,uint16_t len, uint8_t *bytes) {
+    _serial = serial;
     int index = 0;
 
     _cmd = bytes[index++];
@@ -50,7 +50,8 @@ Command::Command(uint16_t len, uint8_t *bytes) {
     }
 }
 
-Command::Command(uint8_t requestId, const char *str) {
+Command::Command(Stream *serial,uint8_t requestId, const char *str) {
+    _serial = serial;
     _requestId = requestId & 0xff;
 
     char *cp = strdup(str);
@@ -73,7 +74,8 @@ Command::Command(uint8_t requestId, const char *str) {
     free(cp);
 }
 
-Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId) {
+Command::Command(Stream *serial,uint8_t requestId, uint8_t cmd, uint16_t attrId) {
+    _serial = serial;
     _requestId = requestId;
     _cmd = cmd;
     _attrId = attrId;
@@ -81,7 +83,8 @@ Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId) {
     _value = NULL;
 }
 
-Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint16_t valueLen, uint8_t *value) {
+Command::Command(Stream *serial,uint8_t requestId, uint8_t cmd, uint16_t attrId, uint16_t valueLen, uint8_t *value) {
+    _serial = serial;
     _requestId = requestId;
     _cmd = cmd;
     _attrId = attrId;
@@ -90,8 +93,9 @@ Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint16_t value
     memcpy(_value, value, valueLen);
 }
 
-Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint8_t status, uint8_t reason, uint16_t valueLen,
+Command::Command(Stream *serial,uint8_t requestId, uint8_t cmd, uint16_t attrId, uint8_t status, uint8_t reason, uint16_t valueLen,
                  uint8_t *value) {
+    _serial = serial;
     _requestId = requestId;
     _cmd = cmd;
     _attrId = attrId;
@@ -102,7 +106,9 @@ Command::Command(uint8_t requestId, uint8_t cmd, uint16_t attrId, uint8_t status
     memcpy(_value, value, valueLen);
 }
 
-Command::Command() {
+Command::Command(Stream *serial) {
+    _serial = serial;
+
 }
 
 Command::~Command() {
@@ -121,7 +127,8 @@ int Command::strToValue(char *valueStr, uint8_t *value) {
 }
 
 uint16_t Command::strToAttrId(char *attrIdStr) {
-    return String(attrIdStr).toInt();
+    return atoi(attrIdStr);
+    //return String(attrIdStr).toInt();
 }
 
 uint8_t Command::strToCmd(char *cmdStr) {
@@ -157,6 +164,10 @@ void Command::getValue(uint8_t *value) {
     for (int i = 0; i < _valueLen; i++) {
         value[i] = _value[i];
     }
+}
+
+uint8_t *Command::getValueP() {
+    return _value;
 }
 
 uint16_t Command::getSize() {
@@ -219,7 +230,7 @@ void Command::dumpBytes() {
         int b = bytes[i] & 0xff;
         sprintf(&_printBuf[strlen(_printBuf)], "%02x", b);
     }
-    Serial.println(_printBuf);
+    _serial->println(_printBuf);
 }
 
 void Command::dump() {
@@ -234,10 +245,10 @@ void Command::dump() {
             sprintf(&_printBuf[strlen(_printBuf)], "%02x", b);
         }
     }
-    Serial.println(_printBuf);
+    _serial->println(_printBuf);
 }
 
-byte getVal(char c) {
+byte Command::getVal(char c) {
     if (c >= '0' && c <= '9')
         return (byte)(c - '0');
     else if (c >= 'A' && c <= 'F')
@@ -245,8 +256,8 @@ byte getVal(char c) {
     else if (c >= 'a' && c <= 'f')
         return (byte)(c - 'a' + 10);
 
-    Serial.print("bad hex char: ");
-    Serial.println(c);
+    _serial->print("bad hex char: ");
+    _serial->println(c);
 
     return 0;
 }

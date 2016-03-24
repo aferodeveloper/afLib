@@ -16,28 +16,35 @@
 
 #include <SPI.h>
 #include <iafLib.h>
-
+#include <ArduinoSPI.h>
 // Include the constants required to access attribute ids from your profile.
 #include "profile/afBlink/device-description.h"
 
 #define BAUD_RATE                 38400
 
 // Automatically detect if we are on Teensy or UNO.
-#if defined(__AVR_ATmega328P__)
-#define UNO     1
-#else
-#define TEENSY  1
-#endif
+#if defined(ARDUINO_AVR_UNO)
+#define INT_PIN                   2
+#define CS_PIN                    10
 
-// Define the pins we need for the platforms we support.
-#ifdef TEENSY
+#elif defined(ARDUINO_AVR_MEGA2560)
+#define INT_PIN                   2
+#define CS_PIN                    10
+#define RESET                     21    // This is used to reboot the Modulo when the Teensy boots
+
+// Need to define these as inputs so they will float and we can connect the real pins for SPI on the
+// 2560 which are 50 - 52. You need to use jumper wires to connect the pins from the 2560 to the Plinto.
+// Since the 2560 is 5V, you must use a Plinto adapter.
+#define MOSI                      11    // 51 on Mega 2560
+#define MISO                      12    // 50 on Mega 2560
+#define SCK                       13    // 52 on Mega 2560
+
+#elif defined(TEENSYDUINO)
 #define INT_PIN                   14    // Modulo uses this to initiate communication
 #define CS_PIN                    10    // Standard SPI chip select (aka SS)
 #define RESET                     21    // This is used to reboot the Modulo when the Teensy boots
-
-#elif UNO
-#define INT_PIN                   2
-#define CS_PIN                    10
+#else
+#error "Sorry, afLib does not support this board"
 #endif
 
 // Modulo LED is active low
@@ -62,7 +69,7 @@ void setup() {
     Serial.begin(BAUD_RATE);
 
     // Serial takes a bit to startup on Teensy...
-#ifdef TEENSY
+#if defined(TEENSYDUINO)
     delay(1000);
 #endif
 
@@ -70,7 +77,7 @@ void setup() {
 
     // The Plinto board automatically connects reset on UNO to reset on Modulo
     // For Teensy, we need to reset manually...
-#ifdef TEENSY
+#if defined(TEENSYDUINO)
     Serial.println("Using Teensy - Resetting Modulo");
     pinMode(RESET, OUTPUT);
     digitalWrite(RESET, 0);
@@ -78,13 +85,36 @@ void setup() {
     digitalWrite(RESET, 1);
 #endif
 
-    // Initialize the afLib
-    // Just need to configure a few things:
-    // CS_PIN - the pin to use for chip select
-    // INT_PIN - the pin used slave interrupt
-    // onAttrSet - the function to be called when one of your attributes has been set.
-    // onAttrSetComplete - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
-    aflib = iafLib::create(CS_PIN, digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete);
+#if defined(ARDUINO_AVR_MEGA2560)
+    Serial.println("Using MEGA2560 - Resetting Modulo");
+
+    // Allow the Plinto SPI pins to float, we'll drive them from elsewhere
+    pinMode(MOSI, INPUT);
+    pinMode(MISO, INPUT);
+    pinMode(SCK, INPUT);
+
+    pinMode(RESET, OUTPUT);
+    digitalWrite(RESET, 0);
+    delay(250);
+    digitalWrite(RESET, 1);
+    delay(1000);
+#endif
+
+     ArduinoSPI *arduinoSPI = new ArduinoSPI(CS_PIN);
+
+    /**
+     * Initialize the afLib
+     *
+     * Just need to configure a few things:
+     *  INT_PIN - the pin used slave interrupt
+     *  ISRWrapper - function to pass interrupt on to afLib
+     *  onAttrSet - the function to be called when one of your attributes has been set.
+     *  onAttrSetComplete - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
+     *  Serial - class to handle serial communications for debug output.
+     *  theSPI - class to handle SPI communications.
+     */
+
+    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete, &Serial, arduinoSPI);
 }
 
 void loop() {
@@ -141,7 +171,7 @@ void onAttrSetComplete(const uint8_t requestId, const uint16_t attributeId, cons
             if (moduleButtonValue != *buttonValue) {
                 moduleButtonValue = *buttonValue;
                 blinking = !blinking;
-                if (aflib->setAttribute(AF_BLINK, blinking) != afSUCCESS) {
+                if (aflib->setAttributeBool(AF_BLINK, blinking) != afSUCCESS) {
                     Serial.println("Could not set BLINK");
                 }
             }
@@ -160,7 +190,7 @@ void toggleModuloLED() {
 void setModuloLED(bool on) {
     if (moduloLEDIsOn != on) {
         int16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
-        if (aflib->setAttribute(AF_MODULO_LED, attrVal) != afSUCCESS) {
+        if (aflib->setAttribute16(AF_MODULO_LED, attrVal) != afSUCCESS) {
             Serial.println("Could not set LED");
         }
         moduloLEDIsOn = on;

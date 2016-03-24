@@ -21,9 +21,9 @@
 
 class StatusCommand {
 public:
-    StatusCommand();
+    StatusCommand(Stream *);
 
-    StatusCommand(uint16_t bytesToSend);
+    StatusCommand(Stream *,uint16_t bytesToSend);
 
     ~StatusCommand();
 
@@ -56,6 +56,7 @@ public:
     void dumpBytes();
 
 private:
+    Stream *    _serial;
     uint8_t     _cmd;
     uint16_t    _bytesToSend;
     uint16_t    _bytesToRecv;

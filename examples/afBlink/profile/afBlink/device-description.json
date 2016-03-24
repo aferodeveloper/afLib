@@ -1,6 +1,6 @@
 {
-	"deviceDescriptionId": "95343625-7bb4-4595-a0ea-ffc699127c72",
-	"partnerId": "8e506a10-95d2-4472-a073-7d1e3d6b5550",
+	"deviceDescriptionId": "51ea541e-e2c9-452c-bed9-232ca26e0af8",
+	"partnerId": "b0aab715-9f23-4d8d-a053-6f2ecd853e0f",
 	"schemaVersion": 2,
 	"services": [
 		{
@@ -116,8 +116,7 @@
 					"dataType": "BYTES",
 					"semanticType": "BLE Comms",
 					"operations": [
-						"READ",
-						"WRITE"
+						"READ"
 					],
 					"defaultValue": "FA000000180018000C00A00F",
 					"length": 12
@@ -135,5 +134,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1450041367200
+	"createdTimestamp": 1456436509037
 }

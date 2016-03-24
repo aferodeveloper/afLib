@@ -17,13 +17,15 @@
 #include "Arduino.h"
 #include "StatusCommand.h"
 
-StatusCommand::StatusCommand(uint16_t bytesToSend) {
+StatusCommand::StatusCommand(Stream *serial,uint16_t bytesToSend) {
+    _serial = serial;
     _cmd = 0x30;
     _bytesToSend = bytesToSend;
     _bytesToRecv = 0;
 }
 
-StatusCommand::StatusCommand() {
+StatusCommand::StatusCommand(Stream *serial) {
+    _serial = serial;
     _cmd = 0x30;
     _bytesToSend = 0;
     _bytesToRecv = 0;
@@ -110,32 +112,32 @@ void StatusCommand::dumpBytes() {
     int bytes[len];
     getBytes(bytes);
 
-    Serial.print("len  : ");
-    Serial.println(len);
-    Serial.print("data : ");
+    _serial->print("len  : ");
+    _serial->println(len);
+    _serial->print("data : ");
     for (int i = 0; i < len; i++) {
         if (i > 0) {
-            Serial.print(", ");
+            _serial->print(", ");
         }
         int b = bytes[i] & 0xff;
         if (b < 0x10) {
-            Serial.print("0x0");
-            Serial.print(b, HEX);
+            _serial->print("0x0");
+            _serial->print(b, HEX);
         } else {
-            Serial.print("0x");
-            Serial.print(b, HEX);
+            _serial->print("0x");
+            _serial->print(b, HEX);
         }
     }
-    Serial.println("");
+    _serial->println("");
 }
 
 void StatusCommand::dump() {
-    Serial.print("cmd              : ");
-    Serial.println(_cmd == 0x30 ? "STATUS" : "STATUS_ACK");
-    Serial.print("bytes to send    : ");
-    Serial.println(_bytesToSend, DEC);
-    Serial.print("bytes to receive : ");
-    Serial.println(_bytesToRecv, DEC);
+    _serial->print("cmd              : ");
+    _serial->println(_cmd == 0x30 ? "STATUS" : "STATUS_ACK");
+    _serial->print("bytes to send    : ");
+    _serial->println(_bytesToSend, DEC);
+    _serial->print("bytes to receive : ");
+    _serial->println(_bytesToRecv, DEC);
 }
 
 

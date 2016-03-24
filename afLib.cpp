@@ -23,46 +23,58 @@
 
 static iafLib *_iaflib = NULL;
 
-iafLib *iafLib::create(const int chipSelect, const int mcuInterrupt, isr isrWrapper,
-                       onAttributeSet attrSet, onAttributeSetComplete attrSetComplete) {
+iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
+                       onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog ,afSPI *theSPI)
+{
     if (_iaflib == NULL) {
-        _iaflib = new afLib(chipSelect, mcuInterrupt, isrWrapper, attrSet, attrSetComplete);
+        _iaflib = new afLib( mcuInterrupt, isrWrapper, attrSet, attrSetComplete, theLog,theSPI);
     }
 
     return _iaflib;
 }
 
-afLib::afLib(const int chipSelect, const int mcuInterrupt, isr isrWrapper,
-             onAttributeSet attrSet, onAttributeSetComplete attrSetComplete) {
+afLib::afLib(const int mcuInterrupt, isr isrWrapper,
+             onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog, afSPI *theSPI)
+{
     queueInit();
+    _theLog= theLog;
+    _theSPI= theSPI;
     _request.p_value = NULL;
 
-    _spiSettings = SPISettings(1000000, LSBFIRST, SPI_MODE0);
+    //_spiSettings = SPISettings(1000000, LSBFIRST, SPI_MODE0);
     _interrupts_pending = 0;
     _state = STATE_IDLE;
 
     _writeCmd = NULL;
     _writeCmdOffset = 0;
 
-    _outstandingSetAttrId = 0;
+    _outstandingSetGetAttrId = 0;
 
     _readCmd = NULL;
     _readCmdOffset = 0;
     _readBufferLen = 0;
 
-    _txStatus = new StatusCommand();
-    _rxStatus = new StatusCommand();
+    _txStatus = new StatusCommand(_theLog);
+    _rxStatus = new StatusCommand(_theLog);
 
-    _chipSelect = chipSelect;
     _onAttrSet = attrSet;
     _onAttrSetComplete = attrSetComplete;
-    pinMode(chipSelect, OUTPUT);
-    digitalWrite(chipSelect, HIGH);
-    SPI.begin();
+    _theSPI->begin();
 
+    // AJS where does this get moved to??
+    #ifdef ARDUINO
     pinMode(mcuInterrupt, INPUT);
     attachInterrupt(mcuInterrupt, isrWrapper, FALLING);
+    #endif
+
+
 }
+
+#ifndef ARDUINO
+// AJS - better place to move this to?
+    void noInterrupts(){}
+    void interrupts(){}
+#endif
 
 void afLib::loop(void) {
     if (isIdle() && (queueGet(&_request.messageType, &_request.requestId, &_request.attrId, &_request.valueLen,
@@ -81,7 +93,7 @@ void afLib::loop(void) {
                 break;
 
             default:
-                Serial.println("loop: request type!");
+                _theLog->println("loop: request type!");
         }
     }
 
@@ -115,31 +127,31 @@ int afLib::getAttribute(const uint16_t attrId) {
 /**
  * The many moods of setAttribute
  */
-int afLib::setAttribute(const uint16_t attrId, const bool value) {
+int afLib::setAttributeBool(const uint16_t attrId, const bool value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
                     (uint8_t *)&value);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const int8_t value) {
+int afLib::setAttribute8(const uint16_t attrId, const int8_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
                     (uint8_t *)&value);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const int16_t value) {
+int afLib::setAttribute16(const uint16_t attrId, const int16_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
                     (uint8_t *) &value);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const int32_t value) {
+int afLib::setAttribute32(const uint16_t attrId, const int32_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
                     (uint8_t *) &value);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const int64_t value) {
+int afLib::setAttribute64(const uint16_t attrId, const int64_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
                     (uint8_t *) &value);
@@ -195,15 +207,17 @@ int afLib::doGetAttribute(uint8_t requestId, uint16_t attrId) {
         return afERROR_BUSY;
     }
 
-    _writeCmd = new Command(requestId, MSG_TYPE_GET, attrId);
+    _writeCmd = new Command(_theLog,requestId, MSG_TYPE_GET, attrId);
     if (!_writeCmd->isValid()) {
-        Serial.print("getAttribute invalid command:");
+        _theLog->print("getAttribute invalid command:");
         _writeCmd->dumpBytes();
         _writeCmd->dump();
         delete (_writeCmd);
         _writeCmd = NULL;
         return afERROR_INVALID_COMMAND;
     }
+
+    _outstandingSetGetAttrId = attrId;
 
     // Start the transmission.
     sendCommand();
@@ -216,9 +230,9 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
         return afERROR_BUSY;
     }
 
-    _writeCmd = new Command(requestId, MSG_TYPE_SET, attrId, valueLen, value);
+    _writeCmd = new Command(_theLog,requestId, MSG_TYPE_SET, attrId, valueLen, value);
     if (!_writeCmd->isValid()) {
-        Serial.print("setAttributeComplete invalid command:");
+        _theLog->print("setAttributeComplete invalid command:");
         _writeCmd->dumpBytes();
         _writeCmd->dump();
         delete (_writeCmd);
@@ -226,7 +240,7 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
         return afERROR_INVALID_COMMAND;
     }
 
-    _outstandingSetAttrId = attrId;
+    _outstandingSetGetAttrId = attrId;
 
     // Start the transmission.
     sendCommand();
@@ -239,9 +253,9 @@ int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status,
         return afERROR_BUSY;
     }
 
-    _writeCmd = new Command(requestId, MSG_TYPE_UPDATE, attrId, status, 3 /* MCU Set it */, valueLen, value);
+    _writeCmd = new Command(_theLog,requestId, MSG_TYPE_UPDATE, attrId, status, 3 /* MCU Set it */, valueLen, value);
     if (!_writeCmd->isValid()) {
-        Serial.print("updateAttribute invalid command:");
+        _theLog->print("updateAttribute invalid command:");
         _writeCmd->dumpBytes();
         _writeCmd->dump();
         delete (_writeCmd);
@@ -256,18 +270,18 @@ int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status,
 
 int afLib::parseCommand(const char *cmd) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
-        Serial.print("Busy: ");
-        Serial.print(_interrupts_pending);
-        Serial.print(", ");
-        Serial.println(_writeCmd != NULL);
+        _theLog->print("Busy: ");
+        _theLog->print(_interrupts_pending);
+        _theLog->print(", ");
+        _theLog->println(_writeCmd != NULL);
         return afERROR_BUSY;
     }
 
     int reqId = _requestId++;
-    _writeCmd = new Command(reqId, cmd);
+    _writeCmd = new Command(_theLog,reqId, cmd);
     if (!_writeCmd->isValid()) {
-        Serial.print("BAD: ");
-        Serial.println(cmd);
+        _theLog->print("BAD: ");
+        _theLog->println(cmd);
         _writeCmd->dumpBytes();
         _writeCmd->dump();
         delete (_writeCmd);
@@ -285,7 +299,7 @@ void afLib::checkInterrupt(void) {
     int result;
 
     if (_interrupts_pending > 0) {
-        //Serial.print("_interrupts_pending: "); Serial.println(_interrupts_pending);
+        //_theLog->print("_interrupts_pending: "); _theLog->println(_interrupts_pending);
 
         switch (_state) {
             case STATE_IDLE:
@@ -314,7 +328,7 @@ void afLib::checkInterrupt(void) {
                 } else {
                     // Try resending the preamble
                     _state = STATE_STATUS_SYNC;
-                    Serial.println("Collision");
+                    _theLog->println("Collision");
 //          _txStatus->dumpBytes();
 //          _rxStatus->dumpBytes();
                 }
@@ -346,7 +360,7 @@ void afLib::checkInterrupt(void) {
                 break;
 
             case STATE_SEND_BYTES:
-//        Serial.print("send bytes: "); Serial.println(_bytesToSend);		
+//        _theLog->print("send bytes: "); _theLog->println(_bytesToSend);		
                 sendBytes();
 
                 if (_bytesToSend == 0) {
@@ -359,12 +373,12 @@ void afLib::checkInterrupt(void) {
                 break;
 
             case STATE_RECV_BYTES:
-//        Serial.print("receive bytes: "); Serial.println(_bytesToRecv);
+//        _theLog->print("receive bytes: "); _theLog->println(_bytesToRecv);
                 recvBytes();
                 if (_bytesToRecv == 0) {
                     _state = STATE_CMD_COMPLETE;
                     printState(_state);
-                    _readCmd = new Command(_readBufferLen, &_readBuffer[2]);
+                    _readCmd = new Command(_theLog,_readBufferLen, &_readBuffer[2]);
                     delete (_readBuffer);
                     _readBuffer = NULL;
                 }
@@ -383,8 +397,8 @@ void afLib::checkInterrupt(void) {
                             break;
 
                         case MSG_TYPE_UPDATE:
-                            if (_readCmd->getAttrId() == _outstandingSetAttrId) {
-                                _outstandingSetAttrId = 0;
+                            if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
+                                _outstandingSetGetAttrId = 0;
                             }
                             _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
                             break;
@@ -399,6 +413,10 @@ void afLib::checkInterrupt(void) {
                 }
 
                 if (_writeCmd != NULL) {
+                    // Fake a callback here for MCU attributes as we don't get one from the module.
+                    if (_writeCmd->getCommand() == MSG_TYPE_UPDATE && IS_MCU_ATTR(_writeCmd->getAttrId())) {
+                        _onAttrSetComplete(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
+                    }
                     delete (_writeCmd);
                     _writeCmdOffset = 0;
                     _writeCmd = NULL;
@@ -410,6 +428,7 @@ void afLib::checkInterrupt(void) {
     }
 }
 
+/*
 void afLib::beginSPI() {
     SPI.beginTransaction(_spiSettings);
     digitalWrite(_chipSelect, LOW);
@@ -421,28 +440,36 @@ void afLib::endSPI() {
     digitalWrite(_chipSelect, HIGH);
     SPI.endTransaction();
 }
-
+*/
 int afLib::exchangeStatus(StatusCommand *tx, StatusCommand *rx) {
     int result = 0;
     uint16_t len = tx->getSize();
     int bytes[len];
+    char rbytes[len+1];
     int index = 0;
     tx->getBytes(bytes);
 
-    beginSPI();
+    _theSPI->beginSPI();
 
-    byte cmd = SPI.transfer(bytes[index++]);
+    for (int i=0;i<len;i++)
+    {
+      rbytes[i]=bytes[i];
+    }
+    rbytes[len]=tx->getChecksum();
+    _theSPI->transfer(rbytes,len+1);
+
+    byte cmd = bytes[index++];
     if (cmd != 0x30 && cmd != 0x31) {
-        Serial.print("exchangeStatus bad cmd: ");
-        Serial.println(cmd, HEX);
+        _theLog->print("exchangeStatus bad cmd: ");
+        _theLog->println(cmd, HEX);
         result = -afERROR_INVALID_COMMAND;
     }
 
-    rx->setBytesToSend(SPI.transfer(bytes[index + 0]) | (SPI.transfer(bytes[index + 1]) << 8));
-    rx->setBytesToRecv(SPI.transfer(bytes[index + 2]) | (SPI.transfer(bytes[index + 3]) << 8));
-    rx->setChecksum(SPI.transfer(tx->getChecksum()));
+    rx->setBytesToSend(rbytes[index + 0] | (rbytes[index + 1] << 8));
+    rx->setBytesToRecv(rbytes[index + 2] | (rbytes[index + 3] << 8));
+    rx->setChecksum(rbytes[index+4]);
 
-    endSPI();
+    _theSPI->endSPI();
 
     return result;
 }
@@ -457,24 +484,28 @@ int afLib::writeStatus(StatusCommand *c) {
     int result = 0;
     uint16_t len = c->getSize();
     int bytes[len];
+    char rbytes[len+1];
     int index = 0;
     c->getBytes(bytes);
 
-    beginSPI();
+    _theSPI->beginSPI();
 
-    byte cmd = SPI.transfer(bytes[index++]);
+    for (int i=0;i<len;i++)
+    {
+      rbytes[i]=bytes[i];
+    }
+    rbytes[len]=c->getChecksum();
+    _theSPI->transfer(rbytes,len+1);
+
+    byte cmd = rbytes[index++];
     if (cmd != 0x30 && cmd != 0x31) {
-        Serial.print("writeStatus bad cmd: ");
-        Serial.println(cmd, HEX);
+        _theLog->print("writeStatus bad cmd: ");
+        _theLog->println(cmd, HEX);
         result = afERROR_INVALID_COMMAND;
     }
 
-    for (int i = 1; i < len; i++) {
-        SPI.transfer(bytes[i]);
-    }
-    SPI.transfer(c->getChecksum());
 
-    endSPI();
+    _theSPI->endSPI();
 
 //  c->dump();
 //  c->dumpBytes();
@@ -489,13 +520,11 @@ void afLib::sendBytes() {
 
     memcpy(bytes, &_writeBuffer[_writeCmdOffset], len);
 
-    beginSPI();
+    _theSPI->beginSPI();
 
-    for (int i = 0; i < len; i++) {
-        SPI.transfer(bytes[i]);
-    }
+    _theSPI->transfer((char *)bytes,len);
 
-    endSPI();
+    _theSPI->endSPI();
 
 //  dumpBytes("Sending:", len, bytes);
 
@@ -511,13 +540,13 @@ void afLib::recvBytes() {
         _readBuffer = new uint8_t[_readBufferLen];
     }
 
-    beginSPI();
+    _theSPI->beginSPI();
 
-    for (int i = 0; i < len; i++) {
-        _readBuffer[i + _readCmdOffset] = SPI.transfer(0);
-    }
 
-    endSPI();
+    char * start =(char*)_readBuffer + _readCmdOffset;
+    _theSPI->transfer(start,len);
+
+    _theSPI->endSPI();
 
 //  dumpBytes("Receiving:", len, _readBuffer);
 
@@ -529,30 +558,30 @@ void afLib::onIdle() {
 }
 
 bool afLib::isIdle() {
-    return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetAttrId == 0;
+    return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetGetAttrId == 0;
 }
 
 void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {
-    Serial.println(label);
+    _theLog->println(label);
     for (int i = 0; i < len; i++) {
         if (i > 0) {
-            Serial.print(", ");
+            _theLog->print(", ");
         }
         uint8_t b = bytes[i] & 0xff;
 
         if (b < 0x10) {
-            Serial.print("0x0");
-            Serial.print(b, HEX);
+            _theLog->print("0x0");
+            _theLog->print(b, HEX);
         } else {
-            Serial.print("0x");
-            Serial.print(b, HEX);
+            _theLog->print("0x");
+            _theLog->print(b, HEX);
         }
     }
-    Serial.println("");
+    _theLog->println("");
 }
 
 void afLib::mcuISR() {
-//  Serial.println("mcu");
+//  _theLog->println("mcu");
     _interrupts_pending++;
 }
 
@@ -560,25 +589,25 @@ void afLib::printState(int state) {
     return;
     switch (state) {
         case STATE_IDLE:
-            Serial.println("STATE_IDLE");
+            _theLog->println("STATE_IDLE");
             break;
         case STATE_STATUS_SYNC:
-            Serial.println("STATE_STATUS_SYNC");
+            _theLog->println("STATE_STATUS_SYNC");
             break;
         case STATE_STATUS_ACK:
-            Serial.println("STATE_STATUS_ACK");
+            _theLog->println("STATE_STATUS_ACK");
             break;
         case STATE_SEND_BYTES:
-            Serial.println("STATE_SEND_BYTES");
+            _theLog->println("STATE_SEND_BYTES");
             break;
         case STATE_RECV_BYTES:
-            Serial.println("STATE_RECV_BYTES");
+            _theLog->println("STATE_RECV_BYTES");
             break;
         case STATE_CMD_COMPLETE:
-            Serial.println("STATE_CMD_COMPLETE");
+            _theLog->println("STATE_CMD_COMPLETE");
             break;
         default:
-            Serial.println("Unknown State!");
+            _theLog->println("Unknown State!");
             break;
     }
 }

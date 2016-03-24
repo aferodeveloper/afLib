@@ -26,6 +26,7 @@
 
 #include "Arduino.h"
 #include "afErrors.h"
+#include "afSPI.h"
 
 #define afMINIMUM_TIME_BETWEEN_REQUESTS     1000
 
@@ -43,15 +44,14 @@ public:
      * Create an instance of the afLib object. The afLib is a singleton. Calling this method multiple
      * times will return the same instance.
      *
-     * @param   chipSelect      The SPI chip select (SS) pin
      * @param   mcuInterrupt    The Arduino interrupt to be used (returned from digitalPinToInterrupt)
      * @param   isrWrapper      This is the isr method that must be defined in your sketch
      * @param   attrSet         Callback for notification of attribute set requests
      * @param   attrSetComplete Callback for notification of attribute set request completions
      * @return  iafLib *        Instance of iafLib
      */
-    static iafLib * create(const int chipSelect, const int mcuInterrupt, isr isrWrapper,
-                           onAttributeSet attrSet, onAttributeSetComplete attrSetComplete);
+    static iafLib * create(const int mcuInterrupt, isr isrWrapper,
+                           onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog, afSPI *theSPI);
 
     /**
      * loop
@@ -75,15 +75,15 @@ public:
      * For MCU attributes, the attribute value will be updated.
      * For IO attributes, the attribute value will be updated, and then onAttrSetComplete will be called.
      */
-    virtual int setAttribute(const uint16_t attrId, const bool value) = 0;
+    virtual int setAttributeBool(const uint16_t attrId, const bool value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const int8_t value) = 0;
+    virtual int setAttribute8(const uint16_t attrId, const int8_t value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const int16_t value) = 0;
+    virtual int setAttribute16(const uint16_t attrId, const int16_t value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const int32_t value) = 0;
+    virtual int setAttribute32(const uint16_t attrId, const int32_t value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const int64_t value) = 0;
+    virtual int setAttribute64(const uint16_t attrId, const int64_t value) = 0;
 
     virtual int setAttribute(const uint16_t attrId, const String &value) = 0;
 
