@@ -1,0 +1,119 @@
+{
+	"deviceDescriptionId": "ce1da928-155e-4a0c-87f9-940548895f9e",
+	"partnerId": "2846be75-1466-41e0-ab8f-0ff72915bae6",
+	"schemaVersion": 2,
+	"services": [
+		{
+			"id": 1,
+			"attributes": [
+				{
+					"id": 1,
+					"dataType": "SINT16",
+					"semanticType": "Servo_Right",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"defaultValue": "DC05",
+					"length": 2
+				},
+				{
+					"id": 2,
+					"dataType": "SINT16",
+					"semanticType": "Servo_Left",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"defaultValue": "DC05",
+					"length": 2
+				},
+				{
+					"id": 2001,
+					"dataType": "SINT64",
+					"semanticType": "Bootloader Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2002,
+					"dataType": "SINT64",
+					"semanticType": "Softdevice Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2003,
+					"dataType": "SINT64",
+					"semanticType": "Application Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 2004,
+					"dataType": "SINT64",
+					"semanticType": "Profile Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8
+				},
+				{
+					"id": 60000,
+					"dataType": "BOOLEAN",
+					"semanticType": "Security Enabled",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "01",
+					"length": 1
+				},
+				{
+					"id": 65018,
+					"dataType": "SINT16",
+					"semanticType": "Attribute ACK",
+					"operations": [
+						"WRITE"
+					],
+					"length": 2
+				},
+				{
+					"id": 65019,
+					"dataType": "UTF8S",
+					"semanticType": "Reboot Reason",
+					"operations": [
+						"READ"
+					],
+					"length": 64
+				},
+				{
+					"id": 65020,
+					"dataType": "BYTES",
+					"semanticType": "BLE Comms",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "FA000000180018000C00A00F",
+					"length": 12
+				},
+				{
+					"id": 65021,
+					"dataType": "BOOLEAN",
+					"semanticType": "SPI Enabled",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "01",
+					"length": 1
+				}
+			]
+		}
+	],
+	"createdTimestamp": 1459529370036
+}

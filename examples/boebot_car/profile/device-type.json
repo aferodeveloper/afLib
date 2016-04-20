@@ -1,0 +1,11 @@
+{
+	"createdTimestamp": 1456783099601,
+	"description": "Description*",
+	"deviceTags": [],
+	"deviceTypeId": "c8f08233-d994-4322-9cc2-12bff4b7c309",
+	"disconnectNotificationLevel": "LOW",
+	"name": "ServoSlider",
+	"partnerId": "",
+	"updatedTimestamp": 1456783099601,
+	"virtual": false
+}

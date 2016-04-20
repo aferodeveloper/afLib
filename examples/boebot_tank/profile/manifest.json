@@ -1,0 +1,14 @@
+{
+	"name": "boebot_tank",
+	"createDate": 1459265794839,
+	"apeVersion": "0.9.3",
+	"originalProfileId": "",
+	"latestProfileId": "246aabd7-bfa9-4832-aa1e-9a6550ec091e",
+	"presentationProfileList": [
+		"94632af0-f0ed-40be-a0e4-0de8b334826b"
+	],
+	"presentationDirMap": {
+		"94632af0-f0ed-40be-a0e4-0de8b334826b": "1459265794839"
+	},
+	"debugBuild": true
+}

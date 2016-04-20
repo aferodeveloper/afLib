@@ -1,0 +1,14 @@
+{
+	"name": "ServoSlider",
+	"createDate": 1456782768304,
+	"apeVersion": "0.9.3",
+	"originalProfileId": "",
+	"latestProfileId": "a0e83f28-71e7-4b8b-8da8-2e5ce3ac9d52",
+	"presentationProfileList": [
+		"1b3c5d8b-a4bd-454f-9e09-4457d1f84998"
+	],
+	"presentationDirMap": {
+		"1b3c5d8b-a4bd-454f-9e09-4457d1f84998": "1456782768304"
+	},
+	"debugBuild": true
+}

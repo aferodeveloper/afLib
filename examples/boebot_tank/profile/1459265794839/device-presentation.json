@@ -1,0 +1,88 @@
+{
+	"active": true,
+	"createdTimestamp": 1459529370945,
+	"deviceProfileId": "246aabd7-bfa9-4832-aa1e-9a6550ec091e",
+	"friendlyName": "Default Presentation",
+	"presentationDefinition": {
+		"attributeOptions": {
+			"1": {
+				"flags": [],
+				"label": "Right",
+				"rangeOptions": {
+					"max": 1700,
+					"min": 1300,
+					"step": 1,
+					"unitLabel": null
+				}
+			},
+			"2": {
+				"flags": [],
+				"label": "Left",
+				"rangeOptions": {
+					"max": 1700,
+					"min": 1300,
+					"step": 1,
+					"unitLabel": null
+				}
+			}
+		},
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1
+				},
+				"controlType": "slider",
+				"id": 1
+			},
+			{
+				"attributeMap": {
+					"value": 2
+				},
+				"controlType": "slider",
+				"id": 2
+			}
+		],
+		"gauge": {
+			"background": {
+				"images": []
+			},
+			"displayRules": [],
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_robey1.png"
+					}
+				]
+			}
+		},
+		"groups": [
+			{
+				"controls": [
+					1,
+					2
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_cycle.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"id": 1459265958222,
+				"label": "Tank Controls"
+			}
+		],
+		"label": "boebot_tank"
+	},
+	"presentationId": "94632af0-f0ed-40be-a0e4-0de8b334826b",
+	"valid": true
+}
