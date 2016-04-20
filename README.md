@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.9.88**
+**Version 0.9.94**
 
 ## Welcome ##
 
@@ -12,11 +12,21 @@ This version of the library support both the Arduino and Linux platforms.
 
 This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560* and *Raspberry PI*.
 
+### Arduino Installation ###
+
+* To install afLib for the first time, follow the instructions for *Importing a .zip Library* on the <http://arduino.cc> site.
+* To update an existing installation with a new version, follow the instructions for *Manual installation*.
+
 ### More Information ###
 
 <http://developer.afero.io>
 
 ### Release Notes ###
+
+afLib 4/20/16 Release Notes
+
+* Add two new examples that demonstrate how attributes can be manipulated either directly or through a transform.
+* Fix a problem with initializing the `spi_ioc_transfer` structure under Linux that was causing errors for ceratin kernels.
 
 afLib 3/24/16 Release Notes
 
