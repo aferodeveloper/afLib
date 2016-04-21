@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.9.94**
+**Version 0.9.95**
 
 ## Welcome ##
 
@@ -22,6 +22,11 @@ This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560
 <http://developer.afero.io>
 
 ### Release Notes ###
+
+afLib 4/21/16 Release Notes
+
+* Restore a missing paren in boebot_tank example.
+* Move the example profiles back to the released version of the profile editor.
 
 afLib 4/20/16 Release Notes
 

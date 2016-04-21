@@ -1,5 +1,5 @@
 {
-	"deviceDescriptionId": "ce1da928-155e-4a0c-87f9-940548895f9e",
+	"deviceDescriptionId": "acd55aa1-06a4-4b34-ae7c-0210c9afb84e",
 	"partnerId": "2846be75-1466-41e0-ab8f-0ff72915bae6",
 	"schemaVersion": 2,
 	"services": [
@@ -75,15 +75,6 @@
 					"length": 1
 				},
 				{
-					"id": 65018,
-					"dataType": "SINT16",
-					"semanticType": "Attribute ACK",
-					"operations": [
-						"WRITE"
-					],
-					"length": 2
-				},
-				{
 					"id": 65019,
 					"dataType": "UTF8S",
 					"semanticType": "Reboot Reason",
@@ -115,5 +106,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1459529370036
+	"createdTimestamp": 1461199425711
 }

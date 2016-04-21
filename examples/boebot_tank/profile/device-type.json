@@ -1,11 +1,11 @@
 {
 	"createdTimestamp": 1459266500542,
-	"description": "Description*",
+	"description": "Control Boe-Bot using independent right/left servos",
 	"deviceTags": [],
 	"deviceTypeId": "56443686-92a9-41ca-9b9b-ffc15dc23310",
 	"disconnectNotificationLevel": "LOW",
 	"name": "boebot_tank",
-	"partnerId": "",
-	"updatedTimestamp": 1459266546887,
+	"partnerId": "2846be75-1466-41e0-ab8f-0ff72915bae6",
+	"updatedTimestamp": 1461199084316,
 	"virtual": false
 }

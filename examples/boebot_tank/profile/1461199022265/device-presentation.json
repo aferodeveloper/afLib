@@ -1,7 +1,7 @@
 {
 	"active": true,
-	"createdTimestamp": 1459529370945,
-	"deviceProfileId": "246aabd7-bfa9-4832-aa1e-9a6550ec091e",
+	"createdTimestamp": 1461199426638,
+	"deviceProfileId": "4c0b788f-d648-42cf-b5c5-83d04c549f57",
 	"friendlyName": "Default Presentation",
 	"presentationDefinition": {
 		"attributeOptions": {
@@ -77,12 +77,12 @@
 					"labelSize": ""
 				},
 				"groups": [],
-				"id": 1459265958222,
-				"label": "Tank Controls"
+				"id": 1461199208972,
+				"label": "Tank"
 			}
 		],
 		"label": "boebot_tank"
 	},
-	"presentationId": "94632af0-f0ed-40be-a0e4-0de8b334826b",
+	"presentationId": "10c188d5-cc19-4f3a-b89c-e1cbf9d89feb",
 	"valid": true
 }

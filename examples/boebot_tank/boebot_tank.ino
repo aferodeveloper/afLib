@@ -62,7 +62,7 @@ void onAttrSet(const uint8_t requestId,
 
     switch (attributeId) {
     case AF_SERVO_RIGHT:
-        updateRightServoSpeed(revSpeed(valAsInt);
+        updateRightServoSpeed(revSpeed(valAsInt));
         break;
 
     case AF_SERVO_LEFT:

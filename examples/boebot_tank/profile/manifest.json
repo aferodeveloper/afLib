@@ -1,14 +1,13 @@
 {
 	"name": "boebot_tank",
-	"createDate": 1459265794839,
-	"apeVersion": "0.9.3",
+	"createDate": 1461199022265,
+	"apeVersion": "0.9.2",
 	"originalProfileId": "",
-	"latestProfileId": "246aabd7-bfa9-4832-aa1e-9a6550ec091e",
+	"latestProfileId": "4c0b788f-d648-42cf-b5c5-83d04c549f57",
 	"presentationProfileList": [
-		"94632af0-f0ed-40be-a0e4-0de8b334826b"
+		"10c188d5-cc19-4f3a-b89c-e1cbf9d89feb"
 	],
 	"presentationDirMap": {
-		"94632af0-f0ed-40be-a0e4-0de8b334826b": "1459265794839"
-	},
-	"debugBuild": true
+		"10c188d5-cc19-4f3a-b89c-e1cbf9d89feb": "1461199022265"
+	}
 }

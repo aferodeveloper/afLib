@@ -1,5 +1,5 @@
 {
-	"deviceDescriptionId": "4b2e8a30-a939-4f28-bd43-9e6881e703c6",
+	"deviceDescriptionId": "13306bc7-adc0-4194-83be-eba054dfb3d5",
 	"partnerId": "2846be75-1466-41e0-ab8f-0ff72915bae6",
 	"schemaVersion": 2,
 	"services": [
@@ -19,19 +19,19 @@
 				},
 				{
 					"id": 2,
-					"dataType": "SINT32",
+					"dataType": "SINT16",
 					"semanticType": "Servo2",
 					"operations": [
 						"READ",
 						"WRITE"
 					],
-					"defaultValue": "DC050000",
-					"length": 4
+					"defaultValue": "DC05",
+					"length": 2
 				},
 				{
 					"id": 3,
 					"dataType": "SINT16",
-					"semanticType": "Accel_Attr",
+					"semanticType": "Steer_Attr",
 					"operations": [
 						"READ",
 						"WRITE"
@@ -42,7 +42,7 @@
 				{
 					"id": 4,
 					"dataType": "SINT16",
-					"semanticType": "Steer_Attr",
+					"semanticType": "Accel_Attr",
 					"operations": [
 						"READ",
 						"WRITE"
@@ -108,15 +108,6 @@
 					"length": 1
 				},
 				{
-					"id": 65018,
-					"dataType": "SINT16",
-					"semanticType": "Attribute ACK",
-					"operations": [
-						"WRITE"
-					],
-					"length": 2
-				},
-				{
 					"id": 65019,
 					"dataType": "UTF8S",
 					"semanticType": "Reboot Reason",
@@ -148,5 +139,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1460134256743
+	"createdTimestamp": 1461198591211
 }

@@ -4,8 +4,8 @@
 	"deviceTags": [],
 	"deviceTypeId": "c8f08233-d994-4322-9cc2-12bff4b7c309",
 	"disconnectNotificationLevel": "LOW",
-	"name": "ServoSlider",
-	"partnerId": "",
-	"updatedTimestamp": 1456783099601,
+	"name": "boebot_car",
+	"partnerId": "2846be75-1466-41e0-ab8f-0ff72915bae6",
+	"updatedTimestamp": 1461197514333,
 	"virtual": false
 }

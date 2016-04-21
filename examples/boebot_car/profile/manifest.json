@@ -1,14 +1,13 @@
 {
-	"name": "ServoSlider",
-	"createDate": 1456782768304,
-	"apeVersion": "0.9.3",
+	"name": "boebot_car",
+	"createDate": 1461197502447,
+	"apeVersion": "0.9.2",
 	"originalProfileId": "",
-	"latestProfileId": "a0e83f28-71e7-4b8b-8da8-2e5ce3ac9d52",
+	"latestProfileId": "7b891833-2dfd-4021-8e4a-4ecfa118374b",
 	"presentationProfileList": [
-		"1b3c5d8b-a4bd-454f-9e09-4457d1f84998"
+		"0875a89c-0fd3-48fe-8325-56d45bc447fe"
 	],
 	"presentationDirMap": {
-		"1b3c5d8b-a4bd-454f-9e09-4457d1f84998": "1456782768304"
-	},
-	"debugBuild": true
+		"0875a89c-0fd3-48fe-8325-56d45bc447fe": "1461197502447"
+	}
 }

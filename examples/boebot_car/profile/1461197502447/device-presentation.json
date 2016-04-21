@@ -1,26 +1,26 @@
 {
 	"active": true,
-	"createdTimestamp": 1460134257596,
-	"deviceProfileId": "a0e83f28-71e7-4b8b-8da8-2e5ce3ac9d52",
+	"createdTimestamp": 1461198592085,
+	"deviceProfileId": "7b891833-2dfd-4021-8e4a-4ecfa118374b",
 	"friendlyName": "Default Presentation",
 	"presentationDefinition": {
 		"attributeOptions": {
 			"3": {
 				"flags": [],
-				"label": "Accelerator",
+				"label": "Steering",
 				"rangeOptions": {
-					"max": 200,
-					"min": 0,
+					"max": 100,
+					"min": -100,
 					"step": 1,
 					"unitLabel": null
 				}
 			},
 			"4": {
 				"flags": [],
-				"label": "Steering",
+				"label": "Accelerator",
 				"rangeOptions": {
-					"max": 100,
-					"min": -100,
+					"max": 200,
+					"min": 0,
 					"step": 1,
 					"unitLabel": null
 				}
@@ -59,21 +59,21 @@
 					"value": 3
 				},
 				"controlType": "slider",
-				"id": 3
+				"id": 1
 			},
 			{
 				"attributeMap": {
 					"value": 4
 				},
 				"controlType": "slider",
-				"id": 4
+				"id": 2
 			},
 			{
 				"attributeMap": {
 					"value": 5
 				},
 				"controlType": "menuControl",
-				"id": 5
+				"id": 3
 			}
 		],
 		"gauge": {
@@ -92,9 +92,9 @@
 		"groups": [
 			{
 				"controls": [
-					4,
-					3,
-					5
+					1,
+					2,
+					3
 				],
 				"gauge": {
 					"background": {
@@ -112,12 +112,12 @@
 					"labelSize": ""
 				},
 				"groups": [],
-				"id": 1456851779100,
-				"label": "Car Mode"
+				"id": 1461197782622,
+				"label": "Car"
 			}
 		],
-		"label": "ServoSlider"
+		"label": "boebot_car"
 	},
-	"presentationId": "1b3c5d8b-a4bd-454f-9e09-4457d1f84998",
+	"presentationId": "0875a89c-0fd3-48fe-8325-56d45bc447fe",
 	"valid": true
 }
