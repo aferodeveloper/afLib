@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.9.95**
+**Version 0.9.108**
 
 ## Welcome ##
 
@@ -22,6 +22,17 @@ This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560
 <http://developer.afero.io>
 
 ### Release Notes ###
+
+afLib 5/26/16 Release Notes
+
+* Retry the initial sync operation if it fails.
+* Remove the old "Collision" message as it was just confusing.
+* Print all attribute names and values at startup.
+* Switch away from using the String object for debug printing to reduce memory.
+* Use the "!Serial" trick to wait for Serial to startup.
+* Fix a bug with bool types.
+* Remove a bunch of used cargo code.
+* Add some comments and rename some methods to make them more clear.
 
 afLib 4/21/16 Release Notes
 

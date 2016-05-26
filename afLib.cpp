@@ -23,6 +23,15 @@
 
 static iafLib *_iaflib = NULL;
 
+#define MAX_SYNC_RETRIES    10
+static long lastSync = 0;
+static int syncRetries = 0;
+
+/**
+ * create
+ *
+ * The public constructor for the afLib. This allows us to create the afLib object once and hold a reference to it.
+ */
 iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
                        onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog ,afSPI *theSPI)
 {
@@ -33,6 +42,11 @@ iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
     return _iaflib;
 }
 
+/**
+ * afLib
+ *
+ * The private constructor for the afLib. This one actually initializes the afLib and prepares it for use.
+ */
 afLib::afLib(const int mcuInterrupt, isr isrWrapper,
              onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog, afSPI *theSPI)
 {
@@ -66,16 +80,16 @@ afLib::afLib(const int mcuInterrupt, isr isrWrapper,
     pinMode(mcuInterrupt, INPUT);
     attachInterrupt(mcuInterrupt, isrWrapper, FALLING);
     #endif
-
-
 }
 
-#ifndef ARDUINO
-// AJS - better place to move this to?
-    void noInterrupts(){}
-    void interrupts(){}
-#endif
-
+/**
+ * loop
+ *
+ * This is how the afLib gets time to run its state machine. This method should be called periodically from the
+ * loop() function of the Arduino sketch.
+ * This function pulls pending attribute operations from the queue. It takes approximately 4 calls to loop() to
+ * complete one attribute operation.
+ */
 void afLib::loop(void) {
     if (isIdle() && (queueGet(&_request.messageType, &_request.requestId, &_request.attrId, &_request.valueLen,
                               &_request.p_value) == afSUCCESS)) {
@@ -101,23 +115,40 @@ void afLib::loop(void) {
         delete (_request.p_value);
         _request.p_value = NULL;
     }
-    checkInterrupt();
+    runStateMachine();
 }
 
+/**
+ * updateIntsPending
+ *
+ * Interrupt-safe method for updating the interrupt count. This is called to increment and decrement the interrupt count
+ * as interrupts are received and handled.
+ */
 void afLib::updateIntsPending(int amount) {
     noInterrupts();
     _interrupts_pending += amount;
     interrupts();
 }
 
+/**
+ * sendCommand
+ *
+ * This increments the interrupt count to kick off the state machine in the next call to loop().
+ */
 void afLib::sendCommand(void) {
     noInterrupts();
     if (_interrupts_pending == 0 && _state == STATE_IDLE) {
-        _interrupts_pending++;
+        updateIntsPending(1);
     }
     interrupts();
 }
 
+/**
+ * getAttribute
+ *
+ * The public getAttribute method. This method queues the operation and returns immediately. Applications must call
+ * loop() for the operation to complete.
+ */
 int afLib::getAttribute(const uint16_t attrId) {
     _requestId++;
     uint8_t dummy; // This value isn't actually used.
@@ -126,11 +157,15 @@ int afLib::getAttribute(const uint16_t attrId) {
 
 /**
  * The many moods of setAttribute
+ *
+ * These are the public versions of the setAttribute method.
+ * These methods queue the operation and return immediately. Applications must call loop() for the operation to complete.
  */
 int afLib::setAttributeBool(const uint16_t attrId, const bool value) {
     _requestId++;
-    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *)&value);
+    uint8_t val = value ? 1 : 0;
+    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(val),
+                    (uint8_t *)&val);
 }
 
 int afLib::setAttribute8(const uint16_t attrId, const int8_t value) {
@@ -202,6 +237,12 @@ int afLib::setAttributeComplete(uint8_t requestId, const uint16_t attrId, const 
     return queuePut(MSG_TYPE_UPDATE, requestId, attrId, valueLen, value);
 }
 
+/**
+ * doGetAttribute
+ *
+ * The private version of getAttribute. This version actually calls sendCommand() to kick off the state machine and
+ * execute the operation.
+ */
 int afLib::doGetAttribute(uint8_t requestId, uint16_t attrId) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
         return afERROR_BUSY;
@@ -225,6 +266,12 @@ int afLib::doGetAttribute(uint8_t requestId, uint16_t attrId) {
     return afSUCCESS;
 }
 
+/**
+ * doSetAttribute
+ *
+ * The private version of setAttribute. This version actually calls sendCommand() to kick off the state machine and
+ * execute the operation.
+ */
 int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen, uint8_t *value) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
         return afERROR_BUSY;
@@ -248,6 +295,12 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
     return afSUCCESS;
 }
 
+/**
+ * doUpdateAttribute
+ *
+ * setAttribute calls on MCU attributes turn into updateAttribute calls. See documentation on the SPI protocol for
+ * more information. This method calls sendCommand() to kick off the state machine and execute the operation.
+ */
 int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status, uint16_t valueLen, uint8_t *value) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
         return afERROR_BUSY;
@@ -268,6 +321,13 @@ int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status,
     return afSUCCESS;
 }
 
+/**
+ * parseCommand
+ *
+ * A debug method for parsing a string into a command. This is not required for library operation and is only supplied
+ * as an example of how to execute attribute operations from a command line interface.
+ */
+#ifdef ATTRIBUTE_CLI
 int afLib::parseCommand(const char *cmd) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
         _theLog->print("Busy: ");
@@ -294,155 +354,229 @@ int afLib::parseCommand(const char *cmd) {
 
     return afSUCCESS;
 }
+#endif
 
-void afLib::checkInterrupt(void) {
-    int result;
-
+/**
+ * runStateMachine
+ *
+ * The state machine for afLib. This state machine is responsible for implementing the KSP SPI protocol and executing
+ * attribute operations.
+ * This method is run:
+ *      1. In response to receiving an interrupt from the ASR-1.
+ *      2. When an attribute operation is pulled out of the queue and executed.
+ */
+void afLib::runStateMachine(void) {
     if (_interrupts_pending > 0) {
         //_theLog->print("_interrupts_pending: "); _theLog->println(_interrupts_pending);
 
         switch (_state) {
             case STATE_IDLE:
-                if (_writeCmd != NULL) {
-                    // Include 2 bytes for length
-                    _bytesToSend = _writeCmd->getSize() + 2;
-                } else {
-                    _bytesToSend = 0;
-                }
-                _state = STATE_STATUS_SYNC;
-                printState(_state);
+                onStateIdle();
                 return;
 
             case STATE_STATUS_SYNC:
-                _txStatus->setAck(false);
-                _txStatus->setBytesToSend(_bytesToSend);
-                _txStatus->setBytesToRecv(0);
-
-                result = exchangeStatus(_txStatus, _rxStatus);
-
-                if (result == 0 && _rxStatus->isValid() && inSync(_txStatus, _rxStatus)) {
-                    _state = STATE_STATUS_ACK;
-                    if (_txStatus->getBytesToSend() == 0 && _rxStatus->getBytesToRecv() > 0) {
-                        _bytesToRecv = _rxStatus->getBytesToRecv();
-                    }
-                } else {
-                    // Try resending the preamble
-                    _state = STATE_STATUS_SYNC;
-                    _theLog->println("Collision");
-//          _txStatus->dumpBytes();
-//          _rxStatus->dumpBytes();
-                }
-                printState(_state);
+                onStateSync();
                 break;
 
             case STATE_STATUS_ACK:
-                _txStatus->setAck(true);
-                _txStatus->setBytesToRecv(_rxStatus->getBytesToRecv());
-                _bytesToRecv = _rxStatus->getBytesToRecv();
-                result = writeStatus(_txStatus);
-                if (result != 0) {
-                    _state = STATE_STATUS_SYNC;
-                    printState(_state);
-                    break;
-                }
-                if (_bytesToSend > 0) {
-                    _writeBufferLen = (uint16_t) _writeCmd->getSize();
-                    _writeBuffer = new uint8_t[_bytesToSend];
-                    memcpy(_writeBuffer, (uint8_t * ) & _writeBufferLen, 2);
-                    _writeCmd->getBytes(&_writeBuffer[2]);
-                    _state = STATE_SEND_BYTES;
-                } else if (_bytesToRecv > 0) {
-                    _state = STATE_RECV_BYTES;
-                } else {
-                    _state = STATE_CMD_COMPLETE;
-                }
-                printState(_state);
+                onStateAck();
                 break;
 
             case STATE_SEND_BYTES:
-//        _theLog->print("send bytes: "); _theLog->println(_bytesToSend);		
-                sendBytes();
-
-                if (_bytesToSend == 0) {
-                    _writeBufferLen = 0;
-                    delete (_writeBuffer);
-                    _writeBuffer = NULL;
-                    _state = STATE_CMD_COMPLETE;
-                    printState(_state);
-                }
+                onStateSendBytes();
                 break;
 
             case STATE_RECV_BYTES:
-//        _theLog->print("receive bytes: "); _theLog->println(_bytesToRecv);
-                recvBytes();
-                if (_bytesToRecv == 0) {
-                    _state = STATE_CMD_COMPLETE;
-                    printState(_state);
-                    _readCmd = new Command(_theLog,_readBufferLen, &_readBuffer[2]);
-                    delete (_readBuffer);
-                    _readBuffer = NULL;
-                }
+                onStateRecvBytes();
                 break;
 
             case STATE_CMD_COMPLETE:
-                _state = STATE_IDLE;
-                printState(_state);
-                if (_readCmd != NULL) {
-                    byte *val = new byte[_readCmd->getValueLen()];
-                    _readCmd->getValue(val);
-
-                    switch (_readCmd->getCommand()) {
-                        case MSG_TYPE_SET:
-                            _onAttrSet(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
-                            break;
-
-                        case MSG_TYPE_UPDATE:
-                            if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
-                                _outstandingSetGetAttrId = 0;
-                            }
-                            _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
-                            break;
-
-                        default:
-                            break;
-                    }
-                    delete (val);
-                    delete (_readCmd);
-                    _readCmdOffset = 0;
-                    _readCmd = NULL;
-                }
-
-                if (_writeCmd != NULL) {
-                    // Fake a callback here for MCU attributes as we don't get one from the module.
-                    if (_writeCmd->getCommand() == MSG_TYPE_UPDATE && IS_MCU_ATTR(_writeCmd->getAttrId())) {
-                        _onAttrSetComplete(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
-                    }
-                    delete (_writeCmd);
-                    _writeCmdOffset = 0;
-                    _writeCmd = NULL;
-                }
+                onStateCmdComplete();
                 break;
         }
 
         updateIntsPending(-1);
+    } else {
+        if (syncRetries > 0 && syncRetries < MAX_SYNC_RETRIES && millis() - lastSync > 1000) {
+            updateIntsPending(1);
+        } else if (syncRetries >= MAX_SYNC_RETRIES) {
+            _theLog->println("No response from ASR-1 - does profile have MCU enabled?");
+            syncRetries = 0;
+            _state = STATE_IDLE;
+        }
     }
 }
 
-/*
-void afLib::beginSPI() {
-    SPI.beginTransaction(_spiSettings);
-    digitalWrite(_chipSelect, LOW);
-    delayMicroseconds(8);
+/**
+ * onStateIdle
+ *
+ * If there is a command to be written, update the bytes to send. Otherwise we're sending a zero-sync message.
+ * Either way advance the state to send a sync message.
+ */
+void afLib::onStateIdle(void) {
+    if (_writeCmd != NULL) {
+        // Include 2 bytes for length
+        _bytesToSend = _writeCmd->getSize() + 2;
+    } else {
+        _bytesToSend = 0;
+    }
+    _state = STATE_STATUS_SYNC;
+    printState(_state);
 }
 
-void afLib::endSPI() {
-    //delayMicroseconds(1);
-    digitalWrite(_chipSelect, HIGH);
-    SPI.endTransaction();
+/**
+ * onStateSync
+ *
+ * Write a sync message over SPI to let the ASR-1 know that we want to send some data.
+ * Check for a "collision" which occurs if the ASR-1 is trying to send us data at the same time.
+ */
+void afLib::onStateSync(void) {
+    int result;
+
+    _txStatus->setAck(false);
+    _txStatus->setBytesToSend(_bytesToSend);
+    _txStatus->setBytesToRecv(0);
+
+    result = exchangeStatus(_txStatus, _rxStatus);
+
+    if (result == afSUCCESS && _rxStatus->isValid() && inSync(_txStatus, _rxStatus)) {
+        syncRetries = 0;   // Flag that sync completed.
+        _state = STATE_STATUS_ACK;
+        if (_txStatus->getBytesToSend() == 0 && _rxStatus->getBytesToRecv() > 0) {
+            _bytesToRecv = _rxStatus->getBytesToRecv();
+        }
+    } else {
+        // Try resending the preamble
+        _state = STATE_STATUS_SYNC;
+        lastSync = millis();
+        syncRetries++;
+//          _txStatus->dumpBytes();
+//          _rxStatus->dumpBytes();
+    }
+    printState(_state);
 }
-*/
+
+/**
+ * onStateAck
+ *
+ * Acknowledge the previous sync message and advance the state.
+ * If there are bytes to send, advance to send bytes state.
+ * If there are bytes to receive, advance to receive bytes state.
+ * Otherwise it was a zero-sync so advance to command complete.
+ */
+void afLib::onStateAck(void) {
+    int result;
+
+    _txStatus->setAck(true);
+    _txStatus->setBytesToRecv(_rxStatus->getBytesToRecv());
+    _bytesToRecv = _rxStatus->getBytesToRecv();
+    result = writeStatus(_txStatus);
+    if (result != afSUCCESS) {
+        _state = STATE_STATUS_SYNC;
+        printState(_state);
+        return;
+    }
+    if (_bytesToSend > 0) {
+        _writeBufferLen = (uint16_t) _writeCmd->getSize();
+        _writeBuffer = new uint8_t[_bytesToSend];
+        memcpy(_writeBuffer, (uint8_t * ) & _writeBufferLen, 2);
+        _writeCmd->getBytes(&_writeBuffer[2]);
+        _state = STATE_SEND_BYTES;
+    } else if (_bytesToRecv > 0) {
+        _state = STATE_RECV_BYTES;
+    } else {
+        _state = STATE_CMD_COMPLETE;
+    }
+    printState(_state);
+}
+
+/**
+ * onStateSendBytes
+ *
+ * Send the required number of bytes to the ASR-1 and then advance to command complete.
+ */
+void afLib::onStateSendBytes(void) {
+//        _theLog->print("send bytes: "); _theLog->println(_bytesToSend);
+    sendBytes();
+
+    if (_bytesToSend == 0) {
+        _writeBufferLen = 0;
+        delete (_writeBuffer);
+        _writeBuffer = NULL;
+        _state = STATE_CMD_COMPLETE;
+        printState(_state);
+    }
+}
+
+/**
+ * onStateRecvBytes
+ *
+ * Receive the required number of bytes from the ASR-1 and then advance to command complete.
+ */
+void afLib::onStateRecvBytes(void) {
+//        _theLog->print("receive bytes: "); _theLog->println(_bytesToRecv);
+    recvBytes();
+    if (_bytesToRecv == 0) {
+        _state = STATE_CMD_COMPLETE;
+        printState(_state);
+        _readCmd = new Command(_theLog,_readBufferLen, &_readBuffer[2]);
+        delete (_readBuffer);
+        _readBuffer = NULL;
+    }
+}
+
+/**
+ * onStateCmdComplete
+ *
+ * Call the appropriate sketch callback to report the result of the command.
+ * Clear the command object and go back to waiting for the next interrupt or command.
+ */
+void afLib::onStateCmdComplete(void) {
+    _state = STATE_IDLE;
+    printState(_state);
+    if (_readCmd != NULL) {
+        byte *val = new byte[_readCmd->getValueLen()];
+        _readCmd->getValue(val);
+
+        switch (_readCmd->getCommand()) {
+            case MSG_TYPE_SET:
+                _onAttrSet(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
+                break;
+
+            case MSG_TYPE_UPDATE:
+                if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
+                    _outstandingSetGetAttrId = 0;
+                }
+                _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
+                break;
+
+            default:
+                break;
+        }
+        delete (val);
+        delete (_readCmd);
+        _readCmdOffset = 0;
+        _readCmd = NULL;
+    }
+
+    if (_writeCmd != NULL) {
+        // Fake a callback here for MCU attributes as we don't get one from the module.
+        if (_writeCmd->getCommand() == MSG_TYPE_UPDATE && IS_MCU_ATTR(_writeCmd->getAttrId())) {
+            _onAttrSetComplete(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
+        }
+        delete (_writeCmd);
+        _writeCmdOffset = 0;
+        _writeCmd = NULL;
+    }
+}
+
+/**
+ * exchangeStatus
+ *
+ * Write a status command object to the ASR-1 and clock in a status object from the ASR-1 at the same time.
+ */
 int afLib::exchangeStatus(StatusCommand *tx, StatusCommand *rx) {
-    int result = 0;
+    int result = afSUCCESS;
     uint16_t len = tx->getSize();
     int bytes[len];
     char rbytes[len+1];
@@ -462,7 +596,7 @@ int afLib::exchangeStatus(StatusCommand *tx, StatusCommand *rx) {
     if (cmd != 0x30 && cmd != 0x31) {
         _theLog->print("exchangeStatus bad cmd: ");
         _theLog->println(cmd, HEX);
-        result = -afERROR_INVALID_COMMAND;
+        result = afERROR_INVALID_COMMAND;
     }
 
     rx->setBytesToSend(rbytes[index + 0] | (rbytes[index + 1] << 8));
@@ -474,14 +608,26 @@ int afLib::exchangeStatus(StatusCommand *tx, StatusCommand *rx) {
     return result;
 }
 
+/**
+ * inSync
+ *
+ * Check to make sure the Arduino and the ASR-1 aren't trying to send data at the same time.
+ * Return true only if there is no collision.
+ */
 bool afLib::inSync(StatusCommand *tx, StatusCommand *rx) {
     return (tx->getBytesToSend() == 0 && rx->getBytesToRecv() == 0) ||
            (tx->getBytesToSend() > 0 && rx->getBytesToRecv() == 0) ||
            (tx->getBytesToSend() == 0 && rx->getBytesToRecv() > 0);
 }
 
+/**
+ * writeStatus
+ *
+ * Write a status command to the ASR-1 and ignore the result. If you want to read bytes at the same time, use
+ * exchangeStatus instead.
+ */
 int afLib::writeStatus(StatusCommand *c) {
-    int result = 0;
+    int result = afSUCCESS;
     uint16_t len = c->getSize();
     int bytes[len];
     char rbytes[len+1];
@@ -513,6 +659,11 @@ int afLib::writeStatus(StatusCommand *c) {
     return result;
 }
 
+/**
+ * sendBytes
+ *
+ * Send the specified number of data bytes to the ASR-1. Do this in chunks of SPI_FRAME_LEN bytes.
+ */
 void afLib::sendBytes() {
     uint16_t len = _bytesToSend > SPI_FRAME_LEN ? SPI_FRAME_LEN : _bytesToSend;
     uint8_t bytes[SPI_FRAME_LEN];
@@ -532,6 +683,11 @@ void afLib::sendBytes() {
     _bytesToSend -= len;
 }
 
+/**
+ * recvBytes
+ *
+ * Receive the specified number of data bytes from the ASR-1. Do this in chunks of SPI_FRAME_LEN bytes.
+ */
 void afLib::recvBytes() {
     uint16_t len = _bytesToRecv > SPI_FRAME_LEN ? SPI_FRAME_LEN : _bytesToRecv;
 
@@ -554,13 +710,99 @@ void afLib::recvBytes() {
     _bytesToRecv -= len;
 }
 
-void afLib::onIdle() {
-}
-
+/**
+ * isIdle
+ *
+ * Provide a way for the sketch to know if we're idle. Returns true if there are no attribute operations in progress.
+ */
 bool afLib::isIdle() {
     return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetGetAttrId == 0;
 }
 
+/**
+ * These methods are required to disable/enable interrupts for the Linux version of afLib.
+ * They are no-ops on Arduino.
+ */
+#ifndef ARDUINO
+void noInterrupts(){}
+    void interrupts(){}
+#endif
+
+void afLib::mcuISR() {
+//  _theLog->println("mcu");
+    updateIntsPending(1);
+}
+
+/****************************************************************************
+ *                              Queue Methods                               *
+ ****************************************************************************/
+/**
+ * queueInit
+ *
+ * Create a small queue to prevent flooding the ASR-1 with attribute operations.
+ * The initial size is small to allow running on small boards like UNO.
+ * Size can be increased on larger boards.
+ */
+void afLib::queueInit() {
+    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
+        _requestQueue[i].p_value = NULL;
+    }
+}
+
+/**
+ * queuePut
+ *
+ * Add an item to the end of the queue. Return an error if we're out of space in the queue.
+ */
+int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen,
+                    const uint8_t *value) {
+    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
+        if (_requestQueue[i].p_value == NULL) {
+            _requestQueue[i].messageType = messageType;
+            _requestQueue[i].attrId = attributeId;
+            _requestQueue[i].requestId = requestId;
+            _requestQueue[i].valueLen = valueLen;
+            _requestQueue[i].p_value = new uint8_t[valueLen];
+            memcpy(_requestQueue[i].p_value, value, valueLen);
+            return afSUCCESS;
+        }
+    }
+
+    return afERROR_QUEUE_OVERFLOW;
+}
+
+/**
+ * queueGet
+ *
+ * Pull and return the oldest item from the queue. Return an error if the queue is empty.
+ */
+int afLib::queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen,
+                    uint8_t **value) {
+    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
+        if (_requestQueue[i].p_value != NULL) {
+            *messageType = _requestQueue[i].messageType;
+            *attributeId = _requestQueue[i].attrId;
+            *requestId = _requestQueue[i].requestId;
+            *valueLen = _requestQueue[i].valueLen;
+            *value = new uint8_t[*valueLen];
+            memcpy(*value, _requestQueue[i].p_value, *valueLen);
+            delete (_requestQueue[i].p_value);
+            _requestQueue[i].p_value = NULL;
+            return afSUCCESS;
+        }
+    }
+
+    return afERROR_QUEUE_UNDERFLOW;
+}
+
+/****************************************************************************
+ *                              Debug Methods                               *
+ ****************************************************************************/
+/**
+ * dumpBytes
+ *
+ * Dump a byte buffer to the debug log.
+ */
 void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {
     _theLog->println(label);
     for (int i = 0; i < len; i++) {
@@ -580,11 +822,11 @@ void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {
     _theLog->println("");
 }
 
-void afLib::mcuISR() {
-//  _theLog->println("mcu");
-    _interrupts_pending++;
-}
-
+/**
+ * printState
+ *
+ * Print the current state of the afLib state machine. For debugging, just remove the return statement.
+ */
 void afLib::printState(int state) {
     return;
     switch (state) {
@@ -610,46 +852,4 @@ void afLib::printState(int state) {
             _theLog->println("Unknown State!");
             break;
     }
-}
-
-void afLib::queueInit() {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        _requestQueue[i].p_value = NULL;
-    }
-}
-
-int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen,
-                    const uint8_t *value) {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        if (_requestQueue[i].p_value == NULL) {
-            _requestQueue[i].messageType = messageType;
-            _requestQueue[i].attrId = attributeId;
-            _requestQueue[i].requestId = requestId;
-            _requestQueue[i].valueLen = valueLen;
-            _requestQueue[i].p_value = new uint8_t[valueLen];
-            memcpy(_requestQueue[i].p_value, value, valueLen);
-            return afSUCCESS;
-        }
-    }
-
-    return afERROR_QUEUE_OVERFLOW;
-}
-
-int afLib::queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen,
-                    uint8_t **value) {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        if (_requestQueue[i].p_value != NULL) {
-            *messageType = _requestQueue[i].messageType;
-            *attributeId = _requestQueue[i].attrId;
-            *requestId = _requestQueue[i].requestId;
-            *valueLen = _requestQueue[i].valueLen;
-            *value = new uint8_t[*valueLen];
-            memcpy(*value, _requestQueue[i].p_value, *valueLen);
-            delete (_requestQueue[i].p_value);
-            _requestQueue[i].p_value = NULL;
-            return afSUCCESS;
-        }
-    }
-
-    return afERROR_QUEUE_UNDERFLOW;
 }

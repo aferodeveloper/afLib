@@ -2,12 +2,12 @@
 	"name": "Blink",
 	"createDate": 1449612695934,
 	"originalProfileId": "",
-	"latestProfileId": "18d27bfa-3f4a-4e12-b954-486991b5ea91",
+	"latestProfileId": "292d359e-c53d-413c-9436-32bacf14e098",
 	"presentationProfileList": [
-		"b0f6bb26-2e89-46ce-8549-54a55a0d4220"
+		"cbca9c5c-06b5-4666-b312-f88e9a42ac66"
 	],
 	"presentationDirMap": {
-		"b0f6bb26-2e89-46ce-8549-54a55a0d4220": "a93b2b57-df05-4979-b9d6-75bca43d0aa0"
+		"cbca9c5c-06b5-4666-b312-f88e9a42ac66": "a93b2b57-df05-4979-b9d6-75bca43d0aa0"
 	},
-	"apeVersion": "0.9.1"
+	"apeVersion": "0.9.3"
 }

@@ -1,7 +1,7 @@
 {
 	"active": true,
-	"createdTimestamp": 1456436510839,
-	"deviceProfileId": "18d27bfa-3f4a-4e12-b954-486991b5ea91",
+	"createdTimestamp": 1463527173683,
+	"deviceProfileId": "292d359e-c53d-413c-9436-32bacf14e098",
 	"friendlyName": "Default Presentation",
 	"presentationDefinition": {
 		"attributeOptions": {
@@ -16,14 +16,14 @@
 							"label": "Off",
 							"state": "standby"
 						},
-						"match": "0"
+						"match": "false"
 					},
 					{
 						"apply": {
 							"label": "On",
 							"state": "running"
 						},
-						"match": "1"
+						"match": "true"
 					}
 				]
 			}
@@ -77,6 +77,6 @@
 		],
 		"label": "Blink"
 	},
-	"presentationId": "b0f6bb26-2e89-46ce-8549-54a55a0d4220",
+	"presentationId": "cbca9c5c-06b5-4666-b312-f88e9a42ac66",
 	"valid": true
 }

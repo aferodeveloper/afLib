@@ -56,6 +56,8 @@
 // requests faster than this so the ASR doesn't get overwhelmed.
 #define BLINK_INTERVAL            afMINIMUM_TIME_BETWEEN_REQUESTS
 
+#define DEBUG_PRINT_BUFFER_LEN    256
+
 /**
  * afLib Stuff
  */
@@ -65,13 +67,18 @@ volatile bool blinking = false;
 volatile bool moduloLEDIsOn = false;      // Track whether the Modulo LED is on
 volatile uint16_t moduleButtonValue = 1;  // Track the button value so we know when it has changed
 
+/**
+ * Forward definitions
+ */
+void toggleModuloLED();
+void setModuloLED(bool on);
+void printAttribute(const char *label, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
+
 void setup() {
     Serial.begin(BAUD_RATE);
-
-    // Serial takes a bit to startup on Teensy...
-#if defined(TEENSYDUINO)
-    delay(1000);
-#endif
+    while (!Serial) {
+        ;
+    }
 
     Serial.println("Hello World");
 
@@ -133,10 +140,7 @@ void loop() {
 
 // This is called when the service changes one of our attributes.
 void onAttrSet(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    Serial.print("onAttrSet id: ");
-    Serial.print(attributeId);
-    Serial.print(" value: ");
-    Serial.println(*value);
+    printAttribute("onAttrSet", attributeId, valueLen, value);
 
     switch (attributeId) {
         // This MCU attribute tells us whether we should be blinking.
@@ -155,10 +159,8 @@ void onAttrSet(const uint8_t requestId, const uint16_t attributeId, const uint16
 // This is called when either an Afero attribute has been changed via setAttribute or in response
 // to a getAttribute call.
 void onAttrSetComplete(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    Serial.print("onAttrSetComplete id: ");
-    Serial.print(attributeId);
-    Serial.print(" value: ");
-    Serial.println(*value);
+    printAttribute("onAttrSetComplete", attributeId, valueLen, value);
+
     switch (attributeId) {
         // Update the state of the LED based on the actual attribute value.
         case AF_MODULO_LED:
@@ -204,5 +206,113 @@ void setModuloLED(bool on) {
 void ISRWrapper() {
     if (aflib) {
         aflib->mcuISR();
+    }
+}
+
+/****************************************************************************************************
+ * Debug Functions                                                                                  *
+ *                                                                                                  *
+ * Some helper functions to make debugging a little easier...                                       *
+ ****************************************************************************************************/
+char *getPrintAttrHeader(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen) {
+    char intStr[6];
+    char *buffer = new char[DEBUG_PRINT_BUFFER_LEN];
+    memset(buffer, 0, DEBUG_PRINT_BUFFER_LEN);
+
+    sprintf(buffer, "%s id: %s len: %s value: ", sourceLabel, attrLabel, itoa(valueLen, intStr, 10));
+    return buffer;
+}
+
+void printAttrBool(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    strcat(buffer, *value == 1 ? "true" : "false");
+    Serial.println(buffer);
+    delete(buffer);
+}
+
+void printAttr16(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    char intStr[6];
+    strcat(buffer, itoa(*((uint16_t *)value), intStr, 10));
+    Serial.println(buffer);
+    delete(buffer);
+}
+
+void printAttrHex(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    for (int i = 0; i < valueLen; i++) {
+        strcat(buffer, String(value[i], HEX).c_str());
+    }
+    Serial.println(buffer);
+    delete(buffer);
+}
+
+void printAttrStr(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    int len = strlen(buffer);
+    for (int i = 0; i < valueLen; i++) {
+        buffer[len + i] = (char)value[i];
+    }
+    Serial.println(buffer);
+    delete(buffer);
+}
+
+void printAttribute(const char *label, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    switch (attributeId) {
+        case AF_BLINK:
+            printAttrBool(label, "AF_BLINK", attributeId, valueLen, value);
+            break;
+
+        case AF_MODULO_LED:
+            printAttr16(label, "AF_MODULO_LED", attributeId, valueLen, value);
+            break;
+
+        case AF_GPIO_0_CONFIGURATION:
+            printAttrHex(label, "AF_GPIO_0_CONFIGURATION", attributeId, valueLen, value);
+            break;
+
+        case AF_MODULO_BUTTON:
+            printAttr16(label, "AF_MODULO_BUTTON", attributeId, valueLen, value);
+            break;
+
+        case AF_GPIO_3_CONFIGURATION:
+            printAttrHex(label, "AF_GPIO_3_CONFIGURATION", attributeId, valueLen, value);
+            break;
+
+        case AF_BOOTLOADER_VERSION:
+            printAttrHex(label, "AF_BOOTLOADER_VERSION", attributeId, valueLen, value);
+            break;
+
+        case AF_SOFTDEVICE_VERSION:
+            printAttrHex(label, "AF_SOFTDEVICE_VERSION", attributeId, valueLen, value);
+            break;
+
+        case AF_APPLICATION_VERSION:
+            printAttrHex(label, "AF_APPLICATION_VERSION", attributeId, valueLen, value);
+            break;
+
+        case AF_PROFILE_VERSION:
+            printAttrHex(label, "AF_PROFILE_VERSION", attributeId, valueLen, value);
+            break;
+
+        case AF_SECURITY_ENABLED:
+            printAttrBool(label, "AF_SECURITY_ENABLED", attributeId, valueLen, value);
+            break;
+
+        case AF_ATTRIBUTE_ACK:
+            printAttr16(label, "AF_ATTRIBUTE_ACK", attributeId, valueLen, value);
+            break;
+
+        case AF_REBOOT_REASON:
+            printAttrStr(label, "AF_REBOOT_REASON", attributeId, valueLen, value);
+            break;
+
+        case AF_BLE_COMMS:
+            printAttrHex(label, "AF_BLE_COMMS", attributeId, valueLen, value);
+            break;
+
+        case AF_SPI_ENABLED:
+            printAttrBool(label, "AF_SPI_ENABLED", attributeId, valueLen, value);
+            break;
     }
 }

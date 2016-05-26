@@ -1,11 +1,11 @@
 {
-	"createdTimestamp": 1456436459152,
+	"createdTimestamp": 1458089259291,
 	"description": "This profile is used with the Blink example to demonstrate using MCU and I/O attributes from either UNO or Teensy.",
 	"deviceTags": [],
-	"deviceTypeId": "6c19d2d9-fc03-4441-96eb-b612f4177c8e",
+	"deviceTypeId": "5bd5c28e-7272-4bbc-a794-97fb525727e0",
 	"disconnectNotificationLevel": "MEDIUM",
 	"name": "Blink",
-	"partnerId": "b0aab715-9f23-4d8d-a053-6f2ecd853e0f",
-	"updatedTimestamp": 1456436459152,
+	"partnerId": "8e506a10-95d2-4472-a073-7d1e3d6b5550",
+	"updatedTimestamp": 1463180942631,
 	"virtual": false
 }

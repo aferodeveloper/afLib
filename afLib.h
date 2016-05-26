@@ -106,11 +106,13 @@ private:
     request_t _request;
     request_t _requestQueue[REQUEST_QUEUE_SIZE];
 
+#ifdef ATTRIBUTE_CLI
     int parseCommand(const char *cmd);
+#endif
 
     void sendCommand(void);
 
-    void checkInterrupt(void);
+    void runStateMachine(void);
 
     void printState(int state);
 
@@ -128,8 +130,6 @@ private:
 
     void recvBytes();
 
-    void onIdle();
-
     void dumpBytes(char *label, int len, uint8_t *bytes);
 
     void updateIntsPending(int amount);
@@ -145,6 +145,13 @@ private:
     int doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen, uint8_t *value);
 
     int doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status, uint16_t valueLen, uint8_t *value);
+
+    void onStateIdle(void);
+    void onStateSync(void);
+    void onStateAck(void);
+    void onStateSendBytes(void);
+    void onStateRecvBytes(void);
+    void onStateCmdComplete(void);
 };
 
 #endif // AFLIB_H__
