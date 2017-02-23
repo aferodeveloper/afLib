@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 0.9.108**
+**Version 0.9.217**
 
 ## Welcome ##
 
@@ -22,6 +22,16 @@ This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560
 <http://developer.afero.io>
 
 ### Release Notes ###
+
+afLib 2/23/17 Release Notes
+
+* Renamed some dubiously-named methods for clarity:
+  onSetAttribute -> attrSetHandler 
+  onAttributeSet -> attrNotifyHandler
+* Renamed a bunch of also dubiously-named internal methods and variable names
+* No longer required to call onSetAttributeComplete in your code, we internalize it now
+* Miscellaneous code formatting changes
+* MOST developer applications should not require any changes, if you implement onSetAttribute and onAttributeSet you'll need to change to the new names
 
 afLib 5/26/16 Release Notes
 
