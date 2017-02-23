@@ -1,6 +1,6 @@
 {
-	"deviceDescriptionId": "ca18e689-aacd-40fb-89df-abd336f1e1e8",
-	"partnerId": "8e506a10-95d2-4472-a073-7d1e3d6b5550",
+	"deviceDescriptionId": "e6f51cf7-c3cb-43b4-82f3-3ce948717087",
+	"partnerId": "b0aab715-9f23-4d8d-a053-6f2ecd853e0f",
 	"schemaVersion": 2,
 	"services": [
 		{
@@ -113,11 +113,43 @@
 					"length": 1
 				},
 				{
+					"id": 65012,
+					"dataType": "SINT32",
+					"semanticType": "Command",
+					"operations": [
+						"WRITE",
+						"MCU"
+					],
+					"length": 4,
+					"value": null
+				},
+				{
+					"id": 65013,
+					"dataType": "SINT8",
+					"semanticType": "Hachi State",
+					"operations": [
+						"READ",
+						"MCU"
+					],
+					"length": 1,
+					"value": null
+				},
+				{
+					"id": 65014,
+					"dataType": "SINT8",
+					"semanticType": "Low Battery Warn",
+					"operations": [
+						"READ",
+						"MCU"
+					],
+					"length": 1,
+					"value": null
+				},
+				{
 					"id": 65018,
 					"dataType": "SINT16",
 					"semanticType": "Attribute ACK",
 					"operations": [
-						"READ",
 						"WRITE"
 					],
 					"length": 2,
@@ -128,7 +160,8 @@
 					"dataType": "UTF8S",
 					"semanticType": "Reboot Reason",
 					"operations": [
-						"READ"
+						"READ",
+						"MCU"
 					],
 					"length": 100,
 					"value": null
@@ -147,9 +180,10 @@
 				{
 					"id": 65021,
 					"dataType": "BOOLEAN",
-					"semanticType": "SPI Enabled",
+					"semanticType": "MCU Interface",
 					"operations": [
-						"READ"
+						"READ",
+						"MCU"
 					],
 					"defaultValue": "01",
 					"value": "true",
@@ -158,5 +192,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1463527173035
+	"createdTimestamp": 1472830102150
 }

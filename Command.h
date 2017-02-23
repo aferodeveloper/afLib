@@ -18,15 +18,9 @@
 #define COMMAND_H__
 
 #include "Arduino.h"
+#include "msg_types.h"
 
 #define SPI_CMD_MAX_LEN  256
-
-#define UPDATE_REASON_UNKNOWN               0
-#define UPDATE_REASON_LOCAL_UPDATE          1
-#define UPDATE_REASON_SERVICE_SET           2
-#define UPDATE_REASON_MCU_SET               3
-#define UPDATE_REASON_RELINK                4
-#define UPDATE_REASON_REBOOT                5
 
 class Command {
 public:

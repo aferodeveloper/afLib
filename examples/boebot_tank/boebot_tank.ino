@@ -46,7 +46,7 @@ void updateLeftServoSpeed(int newValue) {
 }
 
 // This is called when the service changes one of our attributes.
-void onAttrSet(const uint8_t requestId,
+bool attrSetHandler(const uint8_t requestId,
                const uint16_t attributeId,
                const uint16_t valueLen,
                const uint8_t *value) {
@@ -54,7 +54,7 @@ void onAttrSet(const uint8_t requestId,
     int valAsInt = *((int *)value);
 
     if (DEBUG) {
-        Serial.print("onAttrSet() attrId: ");
+        Serial.print("attrSetHandler() attrId: ");
         Serial.print(attributeId);
         Serial.print(" value: ");
         Serial.println(valAsInt);
@@ -70,17 +70,15 @@ void onAttrSet(const uint8_t requestId,
         break;
     }
 
-    if (aflib->setAttributeComplete(requestId, attributeId, valueLen, value) != afSUCCESS) {
-        Serial.println("setAttributeComplete failed!");
-    }
+    return true;
 }
 
 // This is called when either an Afero attribute has been changed via setAttribute or in response to a getAttribute call.
-void onAttrSetComplete(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     int valAsInt = *((int *)value);
 
     if (DEBUG) {
-        Serial.print("onAttrSetComplete() attrId: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(valAsInt);
+        Serial.print("attrNotifyHandler() attrId: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(valAsInt);
     }
 }
 
@@ -103,7 +101,7 @@ void setup() {
 
     // Initialize the afLib
     ArduinoSPI *theSPI = new ArduinoSPI(CS_PIN);
-    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete, &Serial, theSPI);
+    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, theSPI);
 
     // Mark the start time
     start = millis();

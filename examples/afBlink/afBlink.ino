@@ -73,6 +73,8 @@ volatile uint16_t moduleButtonValue = 1;  // Track the button value so we know w
 void toggleModuloLED();
 void setModuloLED(bool on);
 void printAttribute(const char *label, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
+bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
+void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
 
 void setup() {
     Serial.begin(BAUD_RATE);
@@ -121,7 +123,7 @@ void setup() {
      *  theSPI - class to handle SPI communications.
      */
 
-    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, onAttrSet, onAttrSetComplete, &Serial, arduinoSPI);
+    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, arduinoSPI);
 }
 
 void loop() {
@@ -139,8 +141,8 @@ void loop() {
 }
 
 // This is called when the service changes one of our attributes.
-void onAttrSet(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    printAttribute("onAttrSet", attributeId, valueLen, value);
+bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    printAttribute("attrSetHandler", attributeId, valueLen, value);
 
     switch (attributeId) {
         // This MCU attribute tells us whether we should be blinking.
@@ -151,15 +153,16 @@ void onAttrSet(const uint8_t requestId, const uint16_t attributeId, const uint16
         default:
             break;
     }
-    if (aflib->setAttributeComplete(requestId, attributeId, valueLen, value) != afSUCCESS) {
-        Serial.println("setAttributeComplete failed!");
-    }
+
+    // Return false here if your hardware was unable to perform the set request from the service.
+    // This lets the service know that the value did not change.
+    return true;
 }
 
 // This is called when either an Afero attribute has been changed via setAttribute or in response
 // to a getAttribute call.
-void onAttrSetComplete(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    printAttribute("onAttrSetComplete", attributeId, valueLen, value);
+void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    printAttribute("attrNotifyHandler", attributeId, valueLen, value);
 
     switch (attributeId) {
         // Update the state of the LED based on the actual attribute value.
@@ -295,24 +298,8 @@ void printAttribute(const char *label, const uint16_t attributeId, const uint16_
             printAttrHex(label, "AF_PROFILE_VERSION", attributeId, valueLen, value);
             break;
 
-        case AF_SECURITY_ENABLED:
-            printAttrBool(label, "AF_SECURITY_ENABLED", attributeId, valueLen, value);
-            break;
-
-        case AF_ATTRIBUTE_ACK:
-            printAttr16(label, "AF_ATTRIBUTE_ACK", attributeId, valueLen, value);
-            break;
-
-        case AF_REBOOT_REASON:
+        case AF_SYSTEM_REBOOT_REASON:
             printAttrStr(label, "AF_REBOOT_REASON", attributeId, valueLen, value);
-            break;
-
-        case AF_BLE_COMMS:
-            printAttrHex(label, "AF_BLE_COMMS", attributeId, valueLen, value);
-            break;
-
-        case AF_SPI_ENABLED:
-            printAttrBool(label, "AF_SPI_ENABLED", attributeId, valueLen, value);
             break;
     }
 }

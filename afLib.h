@@ -40,12 +40,14 @@ typedef struct {
     uint8_t     requestId;
     uint16_t    valueLen;
     uint8_t     *p_value;
+    uint8_t     status;
+    uint8_t     reason;
 } request_t;
 
 class afLib : public iafLib {
 public:
     afLib(const int mcuInterrupt, isr isrWrapper,
-          onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *serial, afSPI *theSPI);
+          AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *serial, afSPI *theSPI);
 
     virtual void loop(void);
 
@@ -61,13 +63,11 @@ public:
 
     virtual int setAttribute64(const uint16_t attrId, const int64_t value);
 
-    virtual int setAttribute(const uint16_t attrId, const String &value);
+    virtual int setAttributeStr(const uint16_t attrId, const String &value);
 
-    virtual int setAttribute(const uint16_t attrId, const uint16_t valueLen, const char *value);
+    virtual int setAttributeCStr(const uint16_t attrId, const uint16_t valueLen, const char *value);
 
-    virtual int setAttribute(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value);
-
-    virtual int setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value);
+    virtual int setAttributeBytes(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value);
 
     virtual bool isIdle();
 
@@ -86,8 +86,8 @@ private:
     uint16_t _outstandingSetGetAttrId;
 
     // Application Callbacks.
-    onAttributeSet _onAttrSet;
-    onAttributeSetComplete _onAttrSetComplete;
+    AttrSetHandler _attrSetHandler;
+    AttrNotifyHandler _attrNotifyHandler;
 
     Command *_writeCmd;
     uint16_t _writeBufferLen;
@@ -136,15 +136,17 @@ private:
 
     void queueInit(void);
 
-    int queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen, const uint8_t *value);
+    int queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen, const uint8_t *value, uint8_t status, uint8_t reason);
 
-    int queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen, uint8_t **value);
+    int queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen, uint8_t **value, uint8_t *status, uint8_t *reason);
 
     int doGetAttribute(uint8_t requestId, uint16_t attrId);
 
     int doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen, uint8_t *value);
 
-    int doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status, uint16_t valueLen, uint8_t *value);
+    int doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen, uint8_t *value, uint8_t status, uint8_t reason);
+
+    int setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value, uint8_t status, uint8_t reason);
 
     void onStateIdle(void);
     void onStateSync(void);

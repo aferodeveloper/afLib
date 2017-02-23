@@ -28,15 +28,38 @@ static long lastSync = 0;
 static int syncRetries = 0;
 
 /**
+* Required for the Linux version of afLib.
+*/
+#ifndef ARDUINO
+
+#include <sys/time.h>
+
+struct timeval start;
+
+long millis() {
+    gettimeofday(&start, NULL);
+    return start.tv_sec;
+}
+
+/**
+* These methods are required for the Arduino version of afLib.
+* They are no-ops on linux.
+*/
+void noInterrupts() {}
+void interrupts() {}
+
+#endif
+
+/**
  * create
  *
  * The public constructor for the afLib. This allows us to create the afLib object once and hold a reference to it.
  */
 iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
-                       onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog ,afSPI *theSPI)
+                       AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog ,afSPI *theSPI)
 {
     if (_iaflib == NULL) {
-        _iaflib = new afLib( mcuInterrupt, isrWrapper, attrSet, attrSetComplete, theLog,theSPI);
+        _iaflib = new afLib( mcuInterrupt, isrWrapper, attrSet, attrNotify, theLog,theSPI);
     }
 
     return _iaflib;
@@ -48,7 +71,7 @@ iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
  * The private constructor for the afLib. This one actually initializes the afLib and prepares it for use.
  */
 afLib::afLib(const int mcuInterrupt, isr isrWrapper,
-             onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog, afSPI *theSPI)
+             AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afSPI *theSPI)
 {
     queueInit();
     _theLog= theLog;
@@ -71,8 +94,8 @@ afLib::afLib(const int mcuInterrupt, isr isrWrapper,
     _txStatus = new StatusCommand(_theLog);
     _rxStatus = new StatusCommand(_theLog);
 
-    _onAttrSet = attrSet;
-    _onAttrSetComplete = attrSetComplete;
+    _attrSetHandler = attrSet;
+    _attrNotifyHandler = attrNotify;
     _theSPI->begin();
 
     // AJS where does this get moved to??
@@ -92,7 +115,7 @@ afLib::afLib(const int mcuInterrupt, isr isrWrapper,
  */
 void afLib::loop(void) {
     if (isIdle() && (queueGet(&_request.messageType, &_request.requestId, &_request.attrId, &_request.valueLen,
-                              &_request.p_value) == afSUCCESS)) {
+                              &_request.p_value, &_request.status, &_request.reason) == afSUCCESS)) {
         switch (_request.messageType) {
             case MSG_TYPE_GET:
                 doGetAttribute(_request.requestId, _request.attrId);
@@ -103,7 +126,7 @@ void afLib::loop(void) {
                 break;
 
             case MSG_TYPE_UPDATE:
-                doUpdateAttribute(_request.requestId, _request.attrId, 0, _request.valueLen, _request.p_value);
+                doUpdateAttribute(_request.requestId, _request.attrId, _request.valueLen, _request.p_value, _request.status, _request.reason);
                 break;
 
             default:
@@ -152,7 +175,7 @@ void afLib::sendCommand(void) {
 int afLib::getAttribute(const uint16_t attrId) {
     _requestId++;
     uint8_t dummy; // This value isn't actually used.
-    return queuePut(MSG_TYPE_GET, _requestId++, attrId, 0, &dummy);
+    return queuePut(MSG_TYPE_GET, _requestId++, attrId, 0, &dummy, 0, 0);
 }
 
 /**
@@ -165,40 +188,40 @@ int afLib::setAttributeBool(const uint16_t attrId, const bool value) {
     _requestId++;
     uint8_t val = value ? 1 : 0;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(val),
-                    (uint8_t *)&val);
+                    (uint8_t *)&val, 0, 0);
 }
 
 int afLib::setAttribute8(const uint16_t attrId, const int8_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *)&value);
+                    (uint8_t *)&value, 0, 0);
 }
 
 int afLib::setAttribute16(const uint16_t attrId, const int16_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value);
+                    (uint8_t *) &value, 0, 0);
 }
 
 int afLib::setAttribute32(const uint16_t attrId, const int32_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value);
+                    (uint8_t *) &value, 0, 0);
 }
 
 int afLib::setAttribute64(const uint16_t attrId, const int64_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value);
+                    (uint8_t *) &value, 0, 0);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const String &value) {
+int afLib::setAttributeStr(const uint16_t attrId, const String &value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, value.length(),
-                    (uint8_t *) value.c_str());
+                    (uint8_t *) value.c_str(), 0, 0);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const uint16_t valueLen, const char *value) {
+int afLib::setAttributeCStr(const uint16_t attrId, const uint16_t valueLen, const char *value) {
     if (valueLen > MAX_ATTRIBUTE_SIZE) {
         return afERROR_INVALID_PARAM;
     }
@@ -209,10 +232,10 @@ int afLib::setAttribute(const uint16_t attrId, const uint16_t valueLen, const ch
 
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen,
-                    (const uint8_t *) value);
+                    (const uint8_t *) value, 0, 0);
 }
 
-int afLib::setAttribute(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) {
+int afLib::setAttributeBytes(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) {
     if (valueLen > MAX_ATTRIBUTE_SIZE) {
         return afERROR_INVALID_PARAM;
     }
@@ -222,10 +245,10 @@ int afLib::setAttribute(const uint16_t attrId, const uint16_t valueLen, const ui
     }
 
     _requestId++;
-    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen, value);
+    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen, value, 0, 0);
 }
 
-int afLib::setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) {
+int afLib::setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value, uint8_t status, uint8_t reason) {
     if (valueLen > MAX_ATTRIBUTE_SIZE) {
         return afERROR_INVALID_PARAM;
     }
@@ -234,7 +257,7 @@ int afLib::setAttributeComplete(uint8_t requestId, const uint16_t attrId, const 
         return afERROR_INVALID_PARAM;
     }
 
-    return queuePut(MSG_TYPE_UPDATE, requestId, attrId, valueLen, value);
+    return queuePut(MSG_TYPE_UPDATE, requestId, attrId, valueLen, value, status, reason);
 }
 
 /**
@@ -301,12 +324,12 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
  * setAttribute calls on MCU attributes turn into updateAttribute calls. See documentation on the SPI protocol for
  * more information. This method calls sendCommand() to kick off the state machine and execute the operation.
  */
-int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint8_t status, uint16_t valueLen, uint8_t *value) {
+int afLib::doUpdateAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen, uint8_t *value, uint8_t status, uint8_t reason) {
     if (_interrupts_pending > 0 || _writeCmd != NULL) {
         return afERROR_BUSY;
     }
 
-    _writeCmd = new Command(_theLog,requestId, MSG_TYPE_UPDATE, attrId, status, 3 /* MCU Set it */, valueLen, value);
+    _writeCmd = new Command(_theLog, requestId, MSG_TYPE_UPDATE, attrId, status, reason, valueLen, value);
     if (!_writeCmd->isValid()) {
         _theLog->print("updateAttribute invalid command:");
         _writeCmd->dumpBytes();
@@ -538,16 +561,23 @@ void afLib::onStateCmdComplete(void) {
         byte *val = new byte[_readCmd->getValueLen()];
         _readCmd->getValue(val);
 
+        uint8_t reason;
+
         switch (_readCmd->getCommand()) {
             case MSG_TYPE_SET:
-                _onAttrSet(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
+                if (_attrSetHandler(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val)) {
+                    reason = UPDATE_REASON_SERVICE_SET;
+                } else {
+                    reason = UPDATE_REASON_INTERNAL_SET_FAIL;
+                }
+                setAttributeComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val, 0, reason);
                 break;
 
             case MSG_TYPE_UPDATE:
                 if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
                     _outstandingSetGetAttrId = 0;
                 }
-                _onAttrSetComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
+                _attrNotifyHandler(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
                 break;
 
             default:
@@ -562,7 +592,7 @@ void afLib::onStateCmdComplete(void) {
     if (_writeCmd != NULL) {
         // Fake a callback here for MCU attributes as we don't get one from the module.
         if (_writeCmd->getCommand() == MSG_TYPE_UPDATE && IS_MCU_ATTR(_writeCmd->getAttrId())) {
-            _onAttrSetComplete(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
+            _attrNotifyHandler(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
         }
         delete (_writeCmd);
         _writeCmdOffset = 0;
@@ -719,15 +749,6 @@ bool afLib::isIdle() {
     return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetGetAttrId == 0;
 }
 
-/**
- * These methods are required to disable/enable interrupts for the Linux version of afLib.
- * They are no-ops on Arduino.
- */
-#ifndef ARDUINO
-void noInterrupts(){}
-    void interrupts(){}
-#endif
-
 void afLib::mcuISR() {
 //  _theLog->println("mcu");
     updateIntsPending(1);
@@ -755,7 +776,7 @@ void afLib::queueInit() {
  * Add an item to the end of the queue. Return an error if we're out of space in the queue.
  */
 int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen,
-                    const uint8_t *value) {
+                    const uint8_t *value, const uint8_t status, const uint8_t reason) {
     for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
         if (_requestQueue[i].p_value == NULL) {
             _requestQueue[i].messageType = messageType;
@@ -764,6 +785,8 @@ int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attri
             _requestQueue[i].valueLen = valueLen;
             _requestQueue[i].p_value = new uint8_t[valueLen];
             memcpy(_requestQueue[i].p_value, value, valueLen);
+            _requestQueue[i].status = status;
+            _requestQueue[i].reason = reason;
             return afSUCCESS;
         }
     }
@@ -777,7 +800,7 @@ int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attri
  * Pull and return the oldest item from the queue. Return an error if the queue is empty.
  */
 int afLib::queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen,
-                    uint8_t **value) {
+                    uint8_t **value, uint8_t *status, uint8_t *reason) {
     for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
         if (_requestQueue[i].p_value != NULL) {
             *messageType = _requestQueue[i].messageType;
@@ -788,6 +811,8 @@ int afLib::queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attribut
             memcpy(*value, _requestQueue[i].p_value, *valueLen);
             delete (_requestQueue[i].p_value);
             _requestQueue[i].p_value = NULL;
+            *status = _requestQueue[i].status;
+            *reason = _requestQueue[i].reason;
             return afSUCCESS;
         }
     }

@@ -131,7 +131,7 @@ void linuxSPI::transfer(char *bytes,int len)
  //       uint8_t rx[len] = {0, };
 
         struct spi_ioc_transfer tr;
-                memset(tr, 0, sizeof(struct spi_ioc_transfer));
+                memset((void *)&tr, 0, sizeof(struct spi_ioc_transfer));
                 tr.tx_buf = (unsigned long)tx;
                 tr.rx_buf = (unsigned long)rx;
                 tr.len = len;

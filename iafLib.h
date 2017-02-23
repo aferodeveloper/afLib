@@ -33,8 +33,8 @@
 #define MAX_ATTRIBUTE_SIZE                  255
 
 typedef void (*isr)();
-typedef void (*onAttributeSet)(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
-typedef void (*onAttributeSetComplete)(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
+typedef bool (*AttrSetHandler)(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
+typedef void (*AttrNotifyHandler)(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value);
 
 class iafLib {
 public:
@@ -47,11 +47,11 @@ public:
      * @param   mcuInterrupt    The Arduino interrupt to be used (returned from digitalPinToInterrupt)
      * @param   isrWrapper      This is the isr method that must be defined in your sketch
      * @param   attrSet         Callback for notification of attribute set requests
-     * @param   attrSetComplete Callback for notification of attribute set request completions
+     * @param   attrNotify Callback for notification of attribute set request completions
      * @return  iafLib *        Instance of iafLib
      */
     static iafLib * create(const int mcuInterrupt, isr isrWrapper,
-                           onAttributeSet attrSet, onAttributeSetComplete attrSetComplete, Stream *theLog, afSPI *theSPI);
+                           AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afSPI *theSPI);
 
     /**
      * loop
@@ -64,7 +64,7 @@ public:
      * getAttribute
      *
      * Request the value of an attribute be returned from the ASR-1.
-     * Value will be returned in the attrSetComplete callback.
+     * Value will be returned in the attrNotify callback.
      */
     virtual int getAttribute(const uint16_t attrId) = 0;
 
@@ -85,18 +85,11 @@ public:
 
     virtual int setAttribute64(const uint16_t attrId, const int64_t value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const String &value) = 0;
+    virtual int setAttributeStr(const uint16_t attrId, const String &value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const uint16_t valueLen, const char *value) = 0;
+    virtual int setAttributeCStr(const uint16_t attrId, const uint16_t valueLen, const char *value) = 0;
 
-    virtual int setAttribute(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) = 0;
-
-    /**
-     * setAttributeComplete
-     *
-     * Call this in response to an onAttrSet. This lets the ASR-1 know that the set request has been handled.
-     */
-    virtual int setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) = 0;
+    virtual int setAttributeBytes(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) = 0;
 
     /**
      * isIdle
