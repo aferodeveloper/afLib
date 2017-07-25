@@ -16,8 +16,21 @@
 
 #include "Arduino.h"
 #include "afLib.h"
-#include "afErrors.h"
-#include "msg_types.h"
+
+/**
+ * Define this to debug your selected transport (ie SPI or UART).
+ * This will cause a println each time an interrupt or ready byte is received from the ASR.
+ * You will also get states printed whenever a SYNC transaction is performed by the afLib.
+ */
+#define DEBUG_TRANSPORT     0
+
+/**
+ * These are required to be able to recognize the MCU trying to reboot the ASR by setting the command
+ * attribute. We used local defines with the aflib prefix to make sure they are always defined and don't
+ * clash with anything the app is using.
+ */
+#define AFLIB_SYSTEM_COMMAND_ATTR_ID    (65012)
+#define AFLIB_SYSTEM_COMMAND_REBOOT     (1)
 
 #define IS_MCU_ATTR(x) (x >= 0 && x < 1024)
 
@@ -56,10 +69,24 @@ void interrupts() {}
  * The public constructor for the afLib. This allows us to create the afLib object once and hold a reference to it.
  */
 iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
-                       AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog ,afSPI *theSPI)
+                       AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog , afTransport *theTransport)
 {
     if (_iaflib == NULL) {
-        _iaflib = new afLib( mcuInterrupt, isrWrapper, attrSet, attrNotify, theLog,theSPI);
+        _iaflib = new afLib( mcuInterrupt, isrWrapper, attrSet, attrNotify, theLog, theTransport);
+    }
+
+    return _iaflib;
+}
+
+/**
+ * create
+ *
+ * The public constructor for the afLib. This allows us to create the afLib object once and hold a reference to it.
+ */
+iafLib *iafLib::create(AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afTransport *theTransport)
+{
+    if (_iaflib == NULL) {
+        _iaflib = new afLib(-1, NULL, attrSet, attrNotify, theLog, theTransport);
     }
 
     return _iaflib;
@@ -71,11 +98,11 @@ iafLib *iafLib::create(const int mcuInterrupt, isr isrWrapper,
  * The private constructor for the afLib. This one actually initializes the afLib and prepares it for use.
  */
 afLib::afLib(const int mcuInterrupt, isr isrWrapper,
-             AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afSPI *theSPI)
+             AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afTransport *theTransport)
 {
     queueInit();
     _theLog= theLog;
-    _theSPI= theSPI;
+    _theTransport= theTransport;
     _request.p_value = NULL;
 
     //_spiSettings = SPISettings(1000000, LSBFIRST, SPI_MODE0);
@@ -96,13 +123,16 @@ afLib::afLib(const int mcuInterrupt, isr isrWrapper,
 
     _attrSetHandler = attrSet;
     _attrNotifyHandler = attrNotify;
-    _theSPI->begin();
 
-    // AJS where does this get moved to??
-    #ifdef ARDUINO
-    pinMode(mcuInterrupt, INPUT);
-    attachInterrupt(mcuInterrupt, isrWrapper, FALLING);
-    #endif
+
+#ifdef ARDUINO
+    if (mcuInterrupt != -1) {
+        pinMode(mcuInterrupt, INPUT);
+        attachInterrupt(mcuInterrupt, isrWrapper, FALLING);
+    }
+#endif
+
+    _interrupts_pending = 0;
 }
 
 /**
@@ -114,6 +144,10 @@ afLib::afLib(const int mcuInterrupt, isr isrWrapper,
  * complete one attribute operation.
  */
 void afLib::loop(void) {
+    // For UART, we need to look for a magic character on the line as our interrupt.
+    // We call this method to handle that. For other interfaces, the interrupt pin is used and this method does nothing.
+    _theTransport->checkForInterrupt(&_interrupts_pending, isIdle());
+
     if (isIdle() && (queueGet(&_request.messageType, &_request.requestId, &_request.attrId, &_request.valueLen,
                               &_request.p_value, &_request.status, &_request.reason) == afSUCCESS)) {
         switch (_request.messageType) {
@@ -188,37 +222,37 @@ int afLib::setAttributeBool(const uint16_t attrId, const bool value) {
     _requestId++;
     uint8_t val = value ? 1 : 0;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(val),
-                    (uint8_t *)&val, 0, 0);
+                    (uint8_t *)&val, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttribute8(const uint16_t attrId, const int8_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *)&value, 0, 0);
+                    (uint8_t *)&value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttribute16(const uint16_t attrId, const int16_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value, 0, 0);
+                    (uint8_t *) &value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttribute32(const uint16_t attrId, const int32_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value, 0, 0);
+                    (uint8_t *) &value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttribute64(const uint16_t attrId, const int64_t value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, sizeof(value),
-                    (uint8_t *) &value, 0, 0);
+                    (uint8_t *) &value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttributeStr(const uint16_t attrId, const String &value) {
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, value.length(),
-                    (uint8_t *) value.c_str(), 0, 0);
+                    (uint8_t *) value.c_str(), UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttributeCStr(const uint16_t attrId, const uint16_t valueLen, const char *value) {
@@ -232,7 +266,7 @@ int afLib::setAttributeCStr(const uint16_t attrId, const uint16_t valueLen, cons
 
     _requestId++;
     return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen,
-                    (const uint8_t *) value, 0, 0);
+                    (const uint8_t *) value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttributeBytes(const uint16_t attrId, const uint16_t valueLen, const uint8_t *value) {
@@ -245,7 +279,7 @@ int afLib::setAttributeBytes(const uint16_t attrId, const uint16_t valueLen, con
     }
 
     _requestId++;
-    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen, value, 0, 0);
+    return queuePut(IS_MCU_ATTR(attrId) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, _requestId, attrId, valueLen, value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
 }
 
 int afLib::setAttributeComplete(uint8_t requestId, const uint16_t attrId, const uint16_t valueLen, const uint8_t *value, uint8_t status, uint8_t reason) {
@@ -310,7 +344,14 @@ int afLib::doSetAttribute(uint8_t requestId, uint16_t attrId, uint16_t valueLen,
         return afERROR_INVALID_COMMAND;
     }
 
-    _outstandingSetGetAttrId = attrId;
+    /**
+     * Recognize when the MCU is trying to reboot the ASR. When this is the case, the ASR will reboot before
+     * the SPI transaction completes and the _outstandingSetGetAttrId will be left set. Instead, just don't
+     * set it for this case.
+     */
+    if (attrId != AFLIB_SYSTEM_COMMAND_ATTR_ID || *value != AFLIB_SYSTEM_COMMAND_REBOOT) {
+        _outstandingSetGetAttrId = attrId;
+    }
 
     // Start the transmission.
     sendCommand();
@@ -421,9 +462,10 @@ void afLib::runStateMachine(void) {
         updateIntsPending(-1);
     } else {
         if (syncRetries > 0 && syncRetries < MAX_SYNC_RETRIES && millis() - lastSync > 1000) {
+            _theLog->println("Sync Retry");
             updateIntsPending(1);
         } else if (syncRetries >= MAX_SYNC_RETRIES) {
-            _theLog->println("No response from ASR-1 - does profile have MCU enabled?");
+            _theLog->println("No response from ASR - does profile have MCU enabled?");
             syncRetries = 0;
             _state = STATE_IDLE;
         }
@@ -460,7 +502,7 @@ void afLib::onStateSync(void) {
     _txStatus->setBytesToSend(_bytesToSend);
     _txStatus->setBytesToRecv(0);
 
-    result = exchangeStatus(_txStatus, _rxStatus);
+    result = _theTransport->exchangeStatus(_txStatus, _rxStatus);
 
     if (result == afSUCCESS && _rxStatus->isValid() && inSync(_txStatus, _rxStatus)) {
         syncRetries = 0;   // Flag that sync completed.
@@ -473,8 +515,8 @@ void afLib::onStateSync(void) {
         _state = STATE_STATUS_SYNC;
         lastSync = millis();
         syncRetries++;
-//          _txStatus->dumpBytes();
-//          _rxStatus->dumpBytes();
+        //_txStatus->dumpBytes();
+        //_rxStatus->dumpBytes();
     }
     printState(_state);
 }
@@ -493,7 +535,7 @@ void afLib::onStateAck(void) {
     _txStatus->setAck(true);
     _txStatus->setBytesToRecv(_rxStatus->getBytesToRecv());
     _bytesToRecv = _rxStatus->getBytesToRecv();
-    result = writeStatus(_txStatus);
+    result = _theTransport->writeStatus(_txStatus);
     if (result != afSUCCESS) {
         _state = STATE_STATUS_SYNC;
         printState(_state);
@@ -502,7 +544,7 @@ void afLib::onStateAck(void) {
     if (_bytesToSend > 0) {
         _writeBufferLen = (uint16_t) _writeCmd->getSize();
         _writeBuffer = new uint8_t[_bytesToSend];
-        memcpy(_writeBuffer, (uint8_t * ) & _writeBufferLen, 2);
+        memcpy(_writeBuffer, &_writeBufferLen, 2);
         _writeCmd->getBytes(&_writeBuffer[2]);
         _state = STATE_SEND_BYTES;
     } else if (_bytesToRecv > 0) {
@@ -519,8 +561,8 @@ void afLib::onStateAck(void) {
  * Send the required number of bytes to the ASR-1 and then advance to command complete.
  */
 void afLib::onStateSendBytes(void) {
-//        _theLog->print("send bytes: "); _theLog->println(_bytesToSend);
-    sendBytes();
+    //_theLog->print("send bytes: "); _theLog->println(_bytesToSend);
+    _theTransport->sendBytesOffset((char *)_writeBuffer, &_bytesToSend, &_writeCmdOffset);
 
     if (_bytesToSend == 0) {
         _writeBufferLen = 0;
@@ -537,12 +579,12 @@ void afLib::onStateSendBytes(void) {
  * Receive the required number of bytes from the ASR-1 and then advance to command complete.
  */
 void afLib::onStateRecvBytes(void) {
-//        _theLog->print("receive bytes: "); _theLog->println(_bytesToRecv);
-    recvBytes();
+    _theTransport->recvBytesOffset((char **)&_readBuffer, &_readBufferLen, &_bytesToRecv, &_readCmdOffset);
     if (_bytesToRecv == 0) {
         _state = STATE_CMD_COMPLETE;
         printState(_state);
-        _readCmd = new Command(_theLog,_readBufferLen, &_readBuffer[2]);
+        _readCmd = new Command(_theLog, _readBufferLen, &_readBuffer[2]);
+    	//_readCmd->dumpBytes();
         delete (_readBuffer);
         _readBuffer = NULL;
     }
@@ -555,22 +597,32 @@ void afLib::onStateRecvBytes(void) {
  * Clear the command object and go back to waiting for the next interrupt or command.
  */
 void afLib::onStateCmdComplete(void) {
+    int result;
+
     _state = STATE_IDLE;
     printState(_state);
     if (_readCmd != NULL) {
         byte *val = new byte[_readCmd->getValueLen()];
         _readCmd->getValue(val);
 
+        uint8_t state;
         uint8_t reason;
 
         switch (_readCmd->getCommand()) {
             case MSG_TYPE_SET:
                 if (_attrSetHandler(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val)) {
+                    state = UPDATE_STATE_UPDATED;
                     reason = UPDATE_REASON_SERVICE_SET;
                 } else {
+                    state = UPDATE_STATE_FAILED;
                     reason = UPDATE_REASON_INTERNAL_SET_FAIL;
                 }
-                setAttributeComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val, 0, reason);
+                result = setAttributeComplete(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val, state, reason);
+
+                if (result != afSUCCESS) {
+                	_theLog->print("Can't reply to SET! This is FATAL!");
+                }
+
                 break;
 
             case MSG_TYPE_UPDATE:
@@ -601,44 +653,6 @@ void afLib::onStateCmdComplete(void) {
 }
 
 /**
- * exchangeStatus
- *
- * Write a status command object to the ASR-1 and clock in a status object from the ASR-1 at the same time.
- */
-int afLib::exchangeStatus(StatusCommand *tx, StatusCommand *rx) {
-    int result = afSUCCESS;
-    uint16_t len = tx->getSize();
-    int bytes[len];
-    char rbytes[len+1];
-    int index = 0;
-    tx->getBytes(bytes);
-
-    _theSPI->beginSPI();
-
-    for (int i=0;i<len;i++)
-    {
-      rbytes[i]=bytes[i];
-    }
-    rbytes[len]=tx->getChecksum();
-    _theSPI->transfer(rbytes,len+1);
-
-    byte cmd = bytes[index++];
-    if (cmd != 0x30 && cmd != 0x31) {
-        _theLog->print("exchangeStatus bad cmd: ");
-        _theLog->println(cmd, HEX);
-        result = afERROR_INVALID_COMMAND;
-    }
-
-    rx->setBytesToSend(rbytes[index + 0] | (rbytes[index + 1] << 8));
-    rx->setBytesToRecv(rbytes[index + 2] | (rbytes[index + 3] << 8));
-    rx->setChecksum(rbytes[index+4]);
-
-    _theSPI->endSPI();
-
-    return result;
-}
-
-/**
  * inSync
  *
  * Check to make sure the Arduino and the ASR-1 aren't trying to send data at the same time.
@@ -651,96 +665,6 @@ bool afLib::inSync(StatusCommand *tx, StatusCommand *rx) {
 }
 
 /**
- * writeStatus
- *
- * Write a status command to the ASR-1 and ignore the result. If you want to read bytes at the same time, use
- * exchangeStatus instead.
- */
-int afLib::writeStatus(StatusCommand *c) {
-    int result = afSUCCESS;
-    uint16_t len = c->getSize();
-    int bytes[len];
-    char rbytes[len+1];
-    int index = 0;
-    c->getBytes(bytes);
-
-    _theSPI->beginSPI();
-
-    for (int i=0;i<len;i++)
-    {
-      rbytes[i]=bytes[i];
-    }
-    rbytes[len]=c->getChecksum();
-    _theSPI->transfer(rbytes,len+1);
-
-    byte cmd = rbytes[index++];
-    if (cmd != 0x30 && cmd != 0x31) {
-        _theLog->print("writeStatus bad cmd: ");
-        _theLog->println(cmd, HEX);
-        result = afERROR_INVALID_COMMAND;
-    }
-
-
-    _theSPI->endSPI();
-
-//  c->dump();
-//  c->dumpBytes();
-
-    return result;
-}
-
-/**
- * sendBytes
- *
- * Send the specified number of data bytes to the ASR-1. Do this in chunks of SPI_FRAME_LEN bytes.
- */
-void afLib::sendBytes() {
-    uint16_t len = _bytesToSend > SPI_FRAME_LEN ? SPI_FRAME_LEN : _bytesToSend;
-    uint8_t bytes[SPI_FRAME_LEN];
-    memset(bytes, 0xff, sizeof(bytes));
-
-    memcpy(bytes, &_writeBuffer[_writeCmdOffset], len);
-
-    _theSPI->beginSPI();
-
-    _theSPI->transfer((char *)bytes,len);
-
-    _theSPI->endSPI();
-
-//  dumpBytes("Sending:", len, bytes);
-
-    _writeCmdOffset += len;
-    _bytesToSend -= len;
-}
-
-/**
- * recvBytes
- *
- * Receive the specified number of data bytes from the ASR-1. Do this in chunks of SPI_FRAME_LEN bytes.
- */
-void afLib::recvBytes() {
-    uint16_t len = _bytesToRecv > SPI_FRAME_LEN ? SPI_FRAME_LEN : _bytesToRecv;
-
-    if (_readCmdOffset == 0) {
-        _readBufferLen = _bytesToRecv;
-        _readBuffer = new uint8_t[_readBufferLen];
-    }
-
-    _theSPI->beginSPI();
-
-
-    char * start =(char*)_readBuffer + _readCmdOffset;
-    _theSPI->transfer(start,len);
-
-    _theSPI->endSPI();
-
-//  dumpBytes("Receiving:", len, _readBuffer);
-
-    _readCmdOffset += len;
-    _bytesToRecv -= len;
-}
-
-/**
  * isIdle
  *
  * Provide a way for the sketch to know if we're idle. Returns true if there are no attribute operations in progress.
@@ -749,8 +673,19 @@ bool afLib::isIdle() {
     return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetGetAttrId == 0;
 }
 
+/**
+ * These methods are required to disable/enable interrupts for the Linux version of afLib.
+ * They are no-ops on Arduino.
+ */
+#ifndef ARDUINO
+void disableInterrupts(){}
+void enableInterrupts(){}
+#endif
+
 void afLib::mcuISR() {
-//  _theLog->println("mcu");
+#if (defined(DEBUG_TRANSPORT) && DEBUG_TRANSPORT > 0)
+    _theLog->println("mcuISR");
+#endif
     updateIntsPending(1);
 }
 
@@ -853,7 +788,7 @@ void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {
  * Print the current state of the afLib state machine. For debugging, just remove the return statement.
  */
 void afLib::printState(int state) {
-    return;
+#if (defined(DEBUG_TRANSPORT) && DEBUG_TRANSPORT > 0)
     switch (state) {
         case STATE_IDLE:
             _theLog->println("STATE_IDLE");
@@ -877,4 +812,5 @@ void afLib::printState(int state) {
             _theLog->println("Unknown State!");
             break;
     }
+#endif
 }

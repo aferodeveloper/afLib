@@ -30,8 +30,6 @@
 #define STATE_RECV_BYTES                    5
 #define STATE_CMD_COMPLETE                  6
 
-#define SPI_FRAME_LEN                       16
-
 #define REQUEST_QUEUE_SIZE                  10
 
 typedef struct {
@@ -46,8 +44,8 @@ typedef struct {
 
 class afLib : public iafLib {
 public:
-    afLib(const int mcuInterrupt, isr isrWrapper,
-          AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *serial, afSPI *theSPI);
+    afLib(AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *serial, afTransport *theTransport);
+    afLib(const int mcuInterrupt, isr isrWrapper, AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *serial, afTransport *theTransport);
 
     virtual void loop(void);
 
@@ -75,7 +73,7 @@ public:
 
 private:
     Stream *_theLog;
-    afSPI *_theSPI;
+    afTransport *_theTransport;
 
     //SPISettings _spiSettings;
     volatile int _interrupts_pending;
@@ -97,8 +95,8 @@ private:
     uint16_t _readBufferLen;
     uint8_t *_readBuffer;
 
-    int _writeCmdOffset;
-    int _readCmdOffset;
+    uint16_t _writeCmdOffset;
+    uint16_t _readCmdOffset;
 
     StatusCommand *_txStatus;
     StatusCommand *_rxStatus;
@@ -116,18 +114,14 @@ private:
 
     void printState(int state);
 
-    //void beginSPI();
-
-    //void endSPI();
-
-    int exchangeStatus(StatusCommand *tx, StatusCommand *rx);
-
     bool inSync(StatusCommand *tx, StatusCommand *rx);
 
-    int writeStatus(StatusCommand *c);
-
+    void sendBytesSPI(char *bytes, int len);
+    void sendBytesUART(char *bytes, int len);
     void sendBytes();
 
+    void recvBytesSPI(char *bytes, int len);
+    void recvBytesUART(char *bytes, int len);
     void recvBytes();
 
     void dumpBytes(char *label, int len, uint8_t *bytes);

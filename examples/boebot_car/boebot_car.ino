@@ -1,13 +1,30 @@
+/**
+ * Copyright 2017 Afero, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <Servo.h>
 
+#include <SPI.h>
 #include <iafLib.h>
-#include <arduinoSPI.h>
+#include <ArduinoSPI.h>
 #include "profile/device-description.h"
 
 #define INT_PIN                 2
 #define CS_PIN                  10    // Standard SPI chip select (aka SS)
 
-#define STARTUP_DELAY_MICROS    10000
+#define STARTUP_DELAY_MILLIS    10000
 #define STATE_INIT              0
 #define STATE_RUNNING           1
 #define STATE_UPDATE_ATTRS      2
@@ -138,7 +155,7 @@ void initVars() {
     lastTransVal = TRANS_PARK;
 }
 
-// This is called when the service changes one of our attributes.
+// attrSetHandler() is called when a client changes an attribute.
 bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     int valAsInt = *((int *)value);
 
@@ -163,11 +180,14 @@ bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const u
         break;
     }
 
+    // Return value from this call informs service whether or not MCU was able to update local state to reflect the 
+    // attribute change that triggered callback.
+    // Return false here if your MCU was unable to update local state to correspond with the attribute change that occurred;
+    // return true if MCU was successful.
     return true;
 }
 
-// This is called when either an Afero attribute has been changed via setAttribute
-// or in response to a getAttribute call.
+// attrNotifyHandler() is called when either an ASR module attribute has been changed or in response to a getAttribute operation.
 void attrNotifyHandler(const uint8_t requestId,
                        const uint16_t attributeId,
                        const uint16_t valueLen,
@@ -212,23 +232,21 @@ void setup() {
     leftWheel.attach(3);
     rightWheel.attach(4);
 
-    // Initialize the afLib
-    ArduinoSPI *theSPI = new ArduinoSPI(CS_PIN);
-    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, theSPI);
+    afTransport *arduinoSPI = new ArduinoSPI(CS_PIN, &Serial);
+    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, arduinoSPI);
 
     // Initialize variables
     initVars();
 
-    // Mark the start time
-    start = millis();
+    // We allow the system to get ready before we start firing commands at it
+    start = millis() + STARTUP_DELAY_MILLIS;
 }
 
 void loop() {
 
     switch (state) {
     case STATE_INIT:
-        // We allow the system to get ready before we start firing commands at it
-        if (millis() > start + STARTUP_DELAY_MICROS) {
+        if (millis() > start) {
             state = STATE_RUNNING;
         }
         break;
@@ -237,12 +255,22 @@ void loop() {
         break;
 
     case STATE_UPDATE_ATTRS:
-        aflib->setAttribute16(AF_SERVO1, currentRightSpeed);
-        aflib->setAttribute16(AF_SERVO2, currentLeftSpeed);
+        // Could simply call setAttribute16() and ignore return value, but
+        // we'll be more robust and retry until success
+        while (aflib->setAttribute16(AF_SERVO1, currentRightSpeed) != afSUCCESS) {
+            aflib->loop();
+        }
+        while (aflib->setAttribute16(AF_SERVO2, currentLeftSpeed) != afSUCCESS) {
+            aflib->loop();
+        }
         if (currentTransVal == TRANS_PARK) {
             // If we're parked, make sure the UI gets reset
-            aflib->setAttribute16(AF_ACCEL_ATTR, 0);
-            aflib->setAttribute16(AF_STEER_ATTR, 0);
+            while (aflib->setAttribute16(AF_ACCEL_ATTR, 0) != afSUCCESS) {
+                aflib->loop();
+            }
+            while (aflib->setAttribute16(AF_STEER_ATTR, 0) != afSUCCESS) {
+                aflib->loop();
+            }
         }
         state = STATE_RUNNING;
         break;

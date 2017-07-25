@@ -1,13 +1,30 @@
+/**
+ * Copyright 2017 Afero, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <Servo.h>
 
+#include <SPI.h>
 #include <iafLib.h>
-#include <arduinoSPI.h>
+#include <ArduinoSPI.h>
 #include "profile/device-description.h"
 
 #define INT_PIN                 2
 #define CS_PIN                  10    // Standard SPI chip select (aka SS)
 
-#define STARTUP_DELAY_MICROS    10000
+#define STARTUP_DELAY_MILLIS    10000
 #define STATE_INIT              0
 #define STATE_RUNNING           1
 
@@ -45,7 +62,7 @@ void updateLeftServoSpeed(int newValue) {
     leftWheel.writeMicroseconds(newValue);
 }
 
-// This is called when the service changes one of our attributes.
+// attrSetHandler() is called when a client changes an attribute.
 bool attrSetHandler(const uint8_t requestId,
                const uint16_t attributeId,
                const uint16_t valueLen,
@@ -73,7 +90,7 @@ bool attrSetHandler(const uint8_t requestId,
     return true;
 }
 
-// This is called when either an Afero attribute has been changed via setAttribute or in response to a getAttribute call.
+// attrNotifyHandler() is called when either an Afero attribute has been changed via setAttribute or in response to a getAttribute call.
 void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     int valAsInt = *((int *)value);
 
@@ -99,12 +116,11 @@ void setup() {
     leftWheel.attach(3);
     rightWheel.attach(4);
 
-    // Initialize the afLib
-    ArduinoSPI *theSPI = new ArduinoSPI(CS_PIN);
-    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, theSPI);
+    afTransport *arduinoSPI = new ArduinoSPI(CS_PIN, &Serial);
+    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, arduinoSPI);
 
-    // Mark the start time
-    start = millis();
+    // We allow the system to get ready before sending commands
+    start = millis()  + STARTUP_DELAY_MILLIS;
 }
 
 void loop() {
@@ -112,8 +128,7 @@ void loop() {
     switch (state) {
 
     case STATE_INIT:
-        // We allow the system to get ready before sending commands
-        if (millis() > start + STARTUP_DELAY_MICROS) {
+        if (millis() > start) {
             state = STATE_RUNNING;
         }
         break;

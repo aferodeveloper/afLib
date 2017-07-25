@@ -27,6 +27,8 @@
 #include "Arduino.h"
 #include "afErrors.h"
 #include "afSPI.h"
+#include "afUART.h"
+#include "afTransport.h"
 
 #define afMINIMUM_TIME_BETWEEN_REQUESTS     1000
 
@@ -44,14 +46,16 @@ public:
      * Create an instance of the afLib object. The afLib is a singleton. Calling this method multiple
      * times will return the same instance.
      *
-     * @param   mcuInterrupt    The Arduino interrupt to be used (returned from digitalPinToInterrupt)
-     * @param   isrWrapper      This is the isr method that must be defined in your sketch
      * @param   attrSet         Callback for notification of attribute set requests
+     * @param   attrNotify      Callback for notification of attribute set request completions
+     * @param   theLog          An instance of a Stream object that will be used for debug prints
+     * @param   theTransport    An instance of an afTransport object to be used for communications with the ASR-1
      * @param   attrNotify Callback for notification of attribute set request completions
      * @return  iafLib *        Instance of iafLib
      */
-    static iafLib * create(const int mcuInterrupt, isr isrWrapper,
-                           AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afSPI *theSPI);
+    static iafLib * create(AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afTransport *theTransport);
+
+    static iafLib * create(const int mcuInterrupt, isr isrWrapper, AttrSetHandler attrSet, AttrNotifyHandler attrNotify, Stream *theLog, afTransport *theTransport);
 
     /**
      * loop

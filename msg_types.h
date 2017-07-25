@@ -19,6 +19,9 @@
 
 typedef uint8_t msg_type_t;
 
+#define SYNC_REQUEST                            0x30
+#define SYNC_ACK                                0x31
+
 #define MSG_TYPE_UNKNOWN    0
 #define MSG_TYPE_ERROR      1
 
@@ -53,9 +56,9 @@ typedef uint8_t msg_type_t;
 #define UPDATE_REASON_BIND_FOLLOW               0x05 // a bound attribute was changed
 #define UPDATE_REASON_FAKE_UPDATE               0x06 // fake update launched
 #define UPDATE_REASON_NOTIFY_MCU_WE_REBOOTED    0x07 // notify MCU we rebooted. Never goes to Service
-#define UPDATE_REASON_INTERNAL_LAST_VALID       UPDATE_REASON_NOTIFY_MCU_WE_REBOOTED // always last valid #define
-#define UPDATE_REASON_INTERNAL_SET_FAIL         0xfd // Set failed (not to be sent to Service)
-#define UPDATE_REASON_INTERNAL_INITIAL_VALUE    0xfe // initial value (not to be sent to Service)
+#define UPDATE_REASON_LOCAL_SET                 0x08 // response to Local SET
+#define UPDATE_REASON_INTERNAL_LAST_VALID       UPDATE_REASON_LOCAL_SET // always last valid #define
+#define UPDATE_REASON_INTERNAL_SET_FAIL         0xfe // Set failed
 #define UPDATE_REASON_INTERNAL_NO_CHANGE        0xff // do not change current value (not to be sent to Service)
 
 #endif  // MSG_TYPE_H__

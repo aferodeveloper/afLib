@@ -2,9 +2,9 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1494862620848,
-	"deviceProfileId": "b098cf7a-c509-4d17-9bc8-f1ee5bab0c2f",
-	"presentationId": "6d6ccafa-d2be-4594-a977-28f226b50dbc",
+	"createdTimestamp": 1497042761463,
+	"deviceProfileId": "d613c854-71dc-4748-9e0b-fc72faf86936",
+	"presentationId": "86680975-ff37-40bd-b57c-35ea2c3fdf42",
 	"presentationDefinition": {
 		"label": "Blink",
 		"attributeOptions": {
@@ -29,6 +29,26 @@
 						"match": "true"
 					}
 				]
+			},
+			"1024": {
+				"flags": [],
+				"label": "LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "On",
+							"state": "standby"
+						},
+						"match": "0"
+					},
+					{
+						"apply": {
+							"label": "Off",
+							"state": "standby"
+						},
+						"match": "1"
+					}
+				]
 			}
 		},
 		"gauge": {
@@ -47,7 +67,8 @@
 		"groups": [
 			{
 				"controls": [
-					1
+					1,
+					2
 				],
 				"gauge": {
 					"background": {
@@ -76,7 +97,31 @@
 				},
 				"controlType": "menuControl",
 				"id": 1,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "PLAIN"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1024
+				},
+				"controlType": "menuControl",
+				"id": 2,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "PLAIN"
+						}
+					}
+				]
 			}
 		]
 	}

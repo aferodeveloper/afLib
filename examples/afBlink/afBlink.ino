@@ -17,20 +17,33 @@
 #include <SPI.h>
 #include <iafLib.h>
 #include <ArduinoSPI.h>
+#include <ArduinoUART.h>
+#include <ModuleCommands.h>
+#include <ModuleStates.h>
+
 // Include the constants required to access attribute ids from your profile.
 #include "profile/afBlink/device-description.h"
 
-#define BAUD_RATE                 38400
+//#define USE_UART                  1
+#define USE_SPI                   1
+#define BAUD_RATE                 9600
 
-// Automatically detect if we are on Teensy or UNO.
+
+// Automatically detect MCU board type
 #if defined(ARDUINO_AVR_UNO)
 #define INT_PIN                   2
 #define CS_PIN                    10
 
+#define RX_PIN                    7
+#define TX_PIN                    8
+
 #elif defined(ARDUINO_AVR_MEGA2560)
 #define INT_PIN                   2
 #define CS_PIN                    10
-#define RESET                     21    // This is used to reboot the Modulo when the Teensy boots
+#define RESET                     21    // This is used to reboot the Modulo when the Mega boots
+
+#define RX_PIN                    10
+#define TX_PIN                    11
 
 // Need to define these as inputs so they will float and we can connect the real pins for SPI on the
 // 2560 which are 50 - 52. You need to use jumper wires to connect the pins from the 2560 to the Plinto.
@@ -43,6 +56,10 @@
 #define INT_PIN                   14    // Modulo uses this to initiate communication
 #define CS_PIN                    10    // Standard SPI chip select (aka SS)
 #define RESET                     21    // This is used to reboot the Modulo when the Teensy boots
+
+#define RX_PIN                    7
+#define TX_PIN                    8
+
 #else
 #error "Sorry, afLib does not support this board"
 #endif
@@ -54,9 +71,11 @@
 // Blink as fast as we can. There is a minimum time between requests defined
 // by the afLib. We can send requests slower than this, but try not to send
 // requests faster than this so the ASR doesn't get overwhelmed.
-#define BLINK_INTERVAL            afMINIMUM_TIME_BETWEEN_REQUESTS
+#define BLINK_INTERVAL            1000
 
-#define DEBUG_PRINT_BUFFER_LEN    256
+#define ATTR_PRINT_HEADER_LEN     60
+#define ATTR_PRINT_MAX_VALUE_LEN  256
+#define ATTR_PRINT_BUFFER_LEN     (ATTR_PRINT_HEADER_LEN + ATTR_PRINT_MAX_VALUE_LEN)
 
 /**
  * afLib Stuff
@@ -66,6 +85,7 @@ volatile long lastBlink = 0;
 volatile bool blinking = false;
 volatile bool moduloLEDIsOn = false;      // Track whether the Modulo LED is on
 volatile uint16_t moduleButtonValue = 1;  // Track the button value so we know when it has changed
+char attr_print_buffer[ATTR_PRINT_BUFFER_LEN];
 
 /**
  * Forward definitions
@@ -109,21 +129,32 @@ void setup() {
     delay(1000);
 #endif
 
-     ArduinoSPI *arduinoSPI = new ArduinoSPI(CS_PIN);
-
     /**
-     * Initialize the afLib
+     * Initialize the afLib - this depends on communications protocol used (SPI or UART)
      *
-     * Just need to configure a few things:
-     *  INT_PIN - the pin used slave interrupt
-     *  ISRWrapper - function to pass interrupt on to afLib
-     *  onAttrSet - the function to be called when one of your attributes has been set.
-     *  onAttrSetComplete - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
-     *  Serial - class to handle serial communications for debug output.
-     *  theSPI - class to handle SPI communications.
+     *  Configuration involves a few common items:
+     *      ISRWrapper - function to pass interrupt on to afLib.
+     *      attrSetHandler - the function to be called when one of your attributes has been set.
+     *      attrNotifyHandler - the function to be called in response to a getAttribute call or when a afero attribute has been updated.
+     *      Serial - class to handle serial communications for debug output.
+     *  And a few protocol-specific items:
+     *      for SPI:
+     *          INT_PIN - the pin used for SPI slave interrupt.
+     *          arduinoSPI - class to handle SPI communications.
+     *      for UART:
+     *          RX_PIN, TX_PIN - pins used for receive, transmit.
+     *          arduinoUART - class to handle UART communications.
      */
 
+#if defined(USE_UART)
+    afTransport *arduinoUART = new ArduinoUART(RX_PIN, TX_PIN, &Serial);
+    aflib = iafLib::create(attrSetHandler, attrNotifyHandler, &Serial, arduinoUART);
+#elif defined(USE_SPI)
+    afTransport *arduinoSPI = new ArduinoSPI(CS_PIN, &Serial);
     aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, arduinoSPI);
+#else
+#error "Please define a a communication transport (ie SPI or UART)."
+#endif
 }
 
 void loop() {
@@ -183,6 +214,33 @@ void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, cons
         }
             break;
 
+        case AF_SYSTEM_ASR_STATE:
+            Serial.print("ASR state: ");
+            switch (value[0]) {
+                case MODULE_STATE_REBOOTED:
+                    Serial.println("Rebooted");
+                    break;
+
+                case MODULE_STATE_LINKED:
+                    Serial.println("Linked");
+                    break;
+
+                case MODULE_STATE_UPDATING:
+                    Serial.println("Updating");
+                    break;
+
+                case MODULE_STATE_UPDATE_READY:
+                    Serial.println("Update ready - rebooting");
+                    while (aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT) != afSUCCESS) {
+                        aflib->loop();
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            break;
+
         default:
             break;
     }
@@ -195,8 +253,9 @@ void toggleModuloLED() {
 void setModuloLED(bool on) {
     if (moduloLEDIsOn != on) {
         int16_t attrVal = on ? LED_ON : LED_OFF; // Modulo LED is active low
-        if (aflib->setAttribute16(AF_MODULO_LED, attrVal) != afSUCCESS) {
+        while (aflib->setAttribute16(AF_MODULO_LED, attrVal) != afSUCCESS) {
             Serial.println("Could not set LED");
+	        aflib->loop();
         }
         moduloLEDIsOn = on;
     }
@@ -216,48 +275,56 @@ void ISRWrapper() {
  * Debug Functions                                                                                  *
  *                                                                                                  *
  * Some helper functions to make debugging a little easier...                                       *
+ * NOTE: if your sketch doesn't run due to lack of memory, try commenting-out these methods         *
+ * and declaration of attr_print_buffer. These are handy, but they do require significant memory.   *
  ****************************************************************************************************/
-char *getPrintAttrHeader(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen) {
-    char intStr[6];
-    char *buffer = new char[DEBUG_PRINT_BUFFER_LEN];
-    memset(buffer, 0, DEBUG_PRINT_BUFFER_LEN);
-
-    sprintf(buffer, "%s id: %s len: %s value: ", sourceLabel, attrLabel, itoa(valueLen, intStr, 10));
-    return buffer;
+void getPrintAttrHeader(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen) {
+    memset(attr_print_buffer, 0, ATTR_PRINT_BUFFER_LEN);
+    snprintf(attr_print_buffer, ATTR_PRINT_BUFFER_LEN, "%s id: %s len: %05d value: ", sourceLabel, attrLabel, valueLen);
 }
 
 void printAttrBool(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    strcat(buffer, *value == 1 ? "true" : "false");
-    Serial.println(buffer);
-    delete(buffer);
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    strcat(attr_print_buffer, *value == 1 ? "true" : "false");
+    Serial.println(attr_print_buffer);
+}
+
+void printAttr8(const char *sourceLabel, const char *attrLabel, const uint8_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    char intStr[6];
+    strcat(attr_print_buffer, itoa(*((uint8_t *)value), intStr, 10));
+    Serial.println(attr_print_buffer);
 }
 
 void printAttr16(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
     char intStr[6];
-    strcat(buffer, itoa(*((uint16_t *)value), intStr, 10));
-    Serial.println(buffer);
-    delete(buffer);
+    strcat(attr_print_buffer, itoa(*((uint16_t *)value), intStr, 10));
+    Serial.println(attr_print_buffer);
+}
+
+void printAttr32(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    char intStr[11];
+    strcat(attr_print_buffer, itoa(*((uint32_t *)value), intStr, 10));
+    Serial.println(attr_print_buffer);
 }
 
 void printAttrHex(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
     for (int i = 0; i < valueLen; i++) {
-        strcat(buffer, String(value[i], HEX).c_str());
+        strcat(attr_print_buffer, String(value[i], HEX).c_str());
     }
-    Serial.println(buffer);
-    delete(buffer);
+    Serial.println(attr_print_buffer);
 }
 
 void printAttrStr(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    char *buffer = getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    int len = strlen(buffer);
+    getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
+    int len = strlen(attr_print_buffer);
     for (int i = 0; i < valueLen; i++) {
-        buffer[len + i] = (char)value[i];
+        attr_print_buffer[len + i] = (char)value[i];
     }
-    Serial.println(buffer);
-    delete(buffer);
+    Serial.println(attr_print_buffer);
 }
 
 void printAttribute(const char *label, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
@@ -298,8 +365,24 @@ void printAttribute(const char *label, const uint16_t attributeId, const uint16_
             printAttrHex(label, "AF_PROFILE_VERSION", attributeId, valueLen, value);
             break;
 
+        case AF_SYSTEM_ASR_STATE:
+            printAttr8(label, "AF_SYSTEM_ASR_STATE", attributeId, valueLen, value);
+            break;
+
+        case AF_SYSTEM_LOW_POWER_WARN:
+            printAttr8(label, "AF_ATTRIBUTE_LOW_POWER_WARN", attributeId, valueLen, value);
+            break;
+
         case AF_SYSTEM_REBOOT_REASON:
             printAttrStr(label, "AF_REBOOT_REASON", attributeId, valueLen, value);
+            break;
+
+        case AF_SYSTEM_MCU_INTERFACE:
+            printAttr8(label, "AF_SYSTEM_MCU_INTERFACE", attributeId, valueLen, value);
+            break;
+
+        case AF_SYSTEM_LINKED_TIMESTAMP:
+            printAttr32(label, "AF_SYSTEM_LINKED_TIMESTAMP", attributeId, valueLen, value);
             break;
     }
 }

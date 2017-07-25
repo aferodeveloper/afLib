@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AFLIB_ARDUINOSPI_H
-#define AFLIB_ARDUINOSPI_H
+#ifndef AFLIB_AFUART_H
+#define AFLIB_AFUART_H
 
-#include <SPI.h>
-#include "afSPI.h"
+#include <stdint.h>
 
-class ArduinoSPI : public afSPI {
+class afUART {
 	public:
-
-    ArduinoSPI(int chipSelect);
-//afLib.cpp:    _spiSettings = SPISettings(1000000, LSBFIRST, SPI_MODE0);
-        virtual void begin();
-        virtual void beginSPI(); /* settings are in this class */
-        virtual void endSPI();
-        virtual void transfer(char *bytes,int len);
-
-       private:
-
-    SPISettings _spiSettings;
-    int _chipSelect;
+	virtual int available() = 0;
+	virtual char peek() = 0;
+	virtual void read(uint8_t *buffer, int len) = 0;
+	virtual char read() = 0;
+	virtual void write(uint8_t *buffer, int len) = 0;
 };
 
 #endif

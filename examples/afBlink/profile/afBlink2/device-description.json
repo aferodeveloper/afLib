@@ -1,5 +1,5 @@
 {
-	"deviceDescriptionId": "df5ddbd8-bd42-42d3-92f0-0ac6fa3b5ed4",
+	"deviceDescriptionId": "82c4e33a-5071-43e2-aca4-2f8db5c5d494",
 	"partnerId": "b0aab715-9f23-4d8d-a053-6f2ecd853e0f",
 	"schemaVersion": 2,
 	"services": [
@@ -79,19 +79,6 @@
 					"stepValue": null
 				},
 				{
-					"id": 2002,
-					"dataType": "SINT64",
-					"semanticType": "Softdevice Version",
-					"operations": [
-						"READ"
-					],
-					"length": 8,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
-				},
-				{
 					"id": 2003,
 					"dataType": "SINT64",
 					"semanticType": "Application Version",
@@ -112,6 +99,48 @@
 						"READ"
 					],
 					"length": 8,
+					"value": null,
+					"minValue": null,
+					"maxValue": null,
+					"stepValue": null
+				},
+				{
+					"id": 2006,
+					"dataType": "SINT64",
+					"semanticType": "WiFi Version",
+					"operations": [
+						"READ"
+					],
+					"length": 8,
+					"value": null,
+					"minValue": null,
+					"maxValue": null,
+					"stepValue": null
+				},
+				{
+					"id": 59001,
+					"dataType": "SINT16",
+					"semanticType": "Offline Schedules Enabled",
+					"operations": [
+						"READ",
+						"WRITE",
+						"STORE_IN_FLASH"
+					],
+					"defaultValue": "0000",
+					"value": "0",
+					"length": 2
+				},
+				{
+					"id": 60002,
+					"dataType": "BYTES",
+					"semanticType": "Conclave Access",
+					"operations": [
+						"READ",
+						"WRITE",
+						"PASS_THROUGH",
+						"MCU"
+					],
+					"length": 255,
 					"value": null,
 					"minValue": null,
 					"maxValue": null,
@@ -139,6 +168,83 @@
 						"MCU"
 					],
 					"length": 4,
+					"value": null,
+					"minValue": null,
+					"maxValue": null,
+					"stepValue": null
+				},
+				{
+					"id": 65004,
+					"dataType": "UTF8S",
+					"semanticType": "Connected SSID",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "20",
+					"value": " ",
+					"length": 33
+				},
+				{
+					"id": 65005,
+					"dataType": "SINT8",
+					"semanticType": "WiFi Bars",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "00",
+					"value": "0",
+					"length": 1
+				},
+				{
+					"id": 65006,
+					"dataType": "SINT8",
+					"semanticType": "WiFi Steady State",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "00",
+					"value": "0",
+					"length": 1
+				},
+				{
+					"id": 65007,
+					"dataType": "SINT8",
+					"semanticType": "WiFi Setup State",
+					"operations": [
+						"READ",
+						"MCU"
+					],
+					"defaultValue": "00",
+					"value": "0",
+					"length": 1
+				},
+				{
+					"id": 65009,
+					"dataType": "BYTES",
+					"semanticType": "WiFi SSID List",
+					"operations": [
+						"READ",
+						"WRITE",
+						"PASS_THROUGH",
+						"MCU"
+					],
+					"length": 2048,
+					"value": null,
+					"minValue": null,
+					"maxValue": null,
+					"stepValue": null
+				},
+				{
+					"id": 65010,
+					"dataType": "BYTES",
+					"semanticType": "WiFi Credentials",
+					"operations": [
+						"READ",
+						"WRITE",
+						"PASS_THROUGH",
+						"MCU"
+					],
+					"length": 255,
 					"value": null,
 					"minValue": null,
 					"maxValue": null,
@@ -276,5 +382,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1494862619776
+	"createdTimestamp": 1497042759476
 }

@@ -1,13 +1,13 @@
 {
-	"name": "Blink",
+	"name": "afBlink2",
 	"description": "This profile is used with the Blink example to demonstrate using MCU and I/O attributes from either UNO or Teensy.",
-	"createdTimestamp": 1456436459152,
-	"updatedTimestamp": 1490231652581,
-	"deviceTypeId": "6c19d2d9-fc03-4441-96eb-b612f4177c8e",
+	"createdTimestamp": 1493828256749,
+	"updatedTimestamp": 1493828256749,
+	"deviceTypeId": "d4a58f6b-4c34-4495-a71f-c103a6924a31",
 	"partnerId": "",
 	"disconnectNotificationLevel": "MEDIUM",
 	"virtual": false,
 	"deviceTags": [],
 	"transferSecurity": "EXPLICIT_RELEASE",
-	"module": "ASR-1"
+	"module": "ASR-2"
 }
