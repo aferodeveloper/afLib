@@ -1,13 +1,13 @@
 {
 	"name": "boebot_car",
 	"createDate": 1461197502447,
-	"apeVersion": "0.9.2",
+	"apeVersion": "1.0.5-stag.526",
 	"originalProfileId": "",
-	"latestProfileId": "7b891833-2dfd-4021-8e4a-4ecfa118374b",
+	"latestProfileId": "3ed20b06-31b6-4d89-a309-74957d2eb466",
 	"presentationProfileList": [
-		"0875a89c-0fd3-48fe-8325-56d45bc447fe"
+		"b4d4d0ce-425e-46b4-a0bb-e810d8e21bdb"
 	],
 	"presentationDirMap": {
-		"0875a89c-0fd3-48fe-8325-56d45bc447fe": "1461197502447"
+		"b4d4d0ce-425e-46b4-a0bb-e810d8e21bdb": "1461197502447"
 	}
 }

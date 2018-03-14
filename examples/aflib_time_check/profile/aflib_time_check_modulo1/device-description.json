@@ -1,34 +1,54 @@
 {
-	"deviceDescriptionId": "9ff8e5cd-3c4d-495d-80c1-b42b5c05f907",
-	"partnerId": "517118a8-42e2-4143-92a2-876b29aa2c0a",
+	"deviceDescriptionId": "2e163e38-183b-41e9-8ce7-bfe820224b92",
+	"partnerId": "7f657c1e-ac45-4e42-a468-e1e187647c2f",
 	"schemaVersion": 2,
 	"services": [
 		{
 			"id": 1,
 			"attributes": [
 				{
-					"id": 1,
+					"id": 1024,
 					"dataType": "SINT16",
-					"semanticType": "Servo_Right",
+					"semanticType": "LED",
 					"operations": [
 						"READ",
 						"WRITE"
 					],
-					"defaultValue": "DC05",
-					"value": "1500",
+					"defaultValue": "0000",
+					"value": "0",
 					"length": 2
 				},
 				{
-					"id": 2,
-					"dataType": "SINT16",
-					"semanticType": "Servo_Left",
+					"id": 1025,
+					"dataType": "SINT64",
+					"semanticType": "GPIO 0 Configuration",
 					"operations": [
-						"READ",
-						"WRITE"
+						"READ"
 					],
-					"defaultValue": "DC05",
-					"value": "1500",
-					"length": 2
+					"defaultValue": "0001000000000000",
+					"value": "256",
+					"length": 8
+				},
+				{
+					"id": 1030,
+					"dataType": "SINT16",
+					"semanticType": "Button",
+					"operations": [
+						"READ"
+					],
+					"length": 2,
+					"value": null
+				},
+				{
+					"id": 1031,
+					"dataType": "SINT64",
+					"semanticType": "GPIO 3 Configuration",
+					"operations": [
+						"READ"
+					],
+					"defaultValue": "4501000000000000",
+					"value": "325",
+					"length": 8
 				},
 				{
 					"id": 2001,
@@ -66,6 +86,17 @@
 					"semanticType": "Profile Version",
 					"operations": [
 						"READ"
+					],
+					"length": 8,
+					"value": null
+				},
+				{
+					"id": 65001,
+					"dataType": "BYTES",
+					"semanticType": "UTC Offset Data",
+					"operations": [
+						"READ",
+						"WRITE"
 					],
 					"length": 8,
 					"value": null
@@ -205,5 +236,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1501606527827
+	"createdTimestamp": 1513034254516
 }

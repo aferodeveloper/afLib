@@ -16,6 +16,7 @@
 
 #include "Arduino.h"
 #include "afLib.h"
+#include "af_queue.h"
 
 /**
  * Define this to debug your selected transport (ie SPI or UART).
@@ -32,6 +33,13 @@
 #define AFLIB_SYSTEM_COMMAND_ATTR_ID    (65012)
 #define AFLIB_SYSTEM_COMMAND_REBOOT     (1)
 
+/**
+ * Prevent the MCU from spamming us with too many setAttribute requests.
+ * We do this by waiting a small amount of time in between transactions.
+ * This prevents sync retries and allows the module to get it's work done.
+ */
+#define MIN_TIME_BETWEEN_UPDATES_MILLIS (50)
+
 #define IS_MCU_ATTR(x) (x >= 0 && x < 1024)
 
 static iafLib *_iaflib = NULL;
@@ -39,6 +47,9 @@ static iafLib *_iaflib = NULL;
 #define MAX_SYNC_RETRIES    10
 static long lastSync = 0;
 static int syncRetries = 0;
+static long lastComplete = 0;
+
+AF_QUEUE_DECLARE(s_request_queue, sizeof(request_t), REQUEST_QUEUE_SIZE);
 
 /**
 * Required for the Linux version of afLib.
@@ -209,7 +220,7 @@ void afLib::sendCommand(void) {
 int afLib::getAttribute(const uint16_t attrId) {
     _requestId++;
     uint8_t dummy; // This value isn't actually used.
-    return queuePut(MSG_TYPE_GET, _requestId++, attrId, 0, &dummy, 0, 0);
+    return queuePut(MSG_TYPE_GET, _requestId, attrId, 0, &dummy, 0, 0);
 }
 
 /**
@@ -626,10 +637,19 @@ void afLib::onStateCmdComplete(void) {
                 break;
 
             case MSG_TYPE_UPDATE:
-                if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
-                    _outstandingSetGetAttrId = 0;
+                // If the attr update is a "fake" update, don't send it to the MCU
+                if (_readCmd->getReason() != UPDATE_REASON_FAKE_UPDATE) {
+                    if (_readCmd->getAttrId() == _outstandingSetGetAttrId) {
+                        _outstandingSetGetAttrId = 0;
+                    }
+                    static bool inNotifyHandler;
+                    if (!inNotifyHandler) {
+                        inNotifyHandler = true;
+                        _attrNotifyHandler(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
+                        inNotifyHandler = false;
+                    }
+                    lastComplete = millis();
                 }
-                _attrNotifyHandler(_readCmd->getReqId(), _readCmd->getAttrId(), _readCmd->getValueLen(), val);
                 break;
 
             default:
@@ -645,6 +665,7 @@ void afLib::onStateCmdComplete(void) {
         // Fake a callback here for MCU attributes as we don't get one from the module.
         if (_writeCmd->getCommand() == MSG_TYPE_UPDATE && IS_MCU_ATTR(_writeCmd->getAttrId())) {
             _attrNotifyHandler(_writeCmd->getReqId(), _writeCmd->getAttrId(), _writeCmd->getValueLen(), _writeCmd->getValueP());
+            lastComplete = millis();
         }
         delete (_writeCmd);
         _writeCmdOffset = 0;
@@ -670,6 +691,10 @@ bool afLib::inSync(StatusCommand *tx, StatusCommand *rx) {
  * Provide a way for the sketch to know if we're idle. Returns true if there are no attribute operations in progress.
  */
 bool afLib::isIdle() {
+    if (lastComplete != 0 && (millis() - lastComplete) < MIN_TIME_BETWEEN_UPDATES_MILLIS) {
+        return false;
+    }
+    lastComplete = 0;
     return _interrupts_pending == 0 && _state == STATE_IDLE && _outstandingSetGetAttrId == 0;
 }
 
@@ -692,6 +717,14 @@ void afLib::mcuISR() {
 /****************************************************************************
  *                              Queue Methods                               *
  ****************************************************************************/
+
+static uint8_t af_queue_preemption_disable(void) {
+    return 0;
+}
+
+static void af_queue_preemption_enable(uint8_t is_nested) {
+}
+
 /**
  * queueInit
  *
@@ -700,9 +733,8 @@ void afLib::mcuISR() {
  * Size can be increased on larger boards.
  */
 void afLib::queueInit() {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        _requestQueue[i].p_value = NULL;
-    }
+    af_queue_init_system(af_queue_preemption_disable, af_queue_preemption_enable, _theLog);
+    AF_QUEUE_INIT(s_request_queue, sizeof(request_t), REQUEST_QUEUE_SIZE);
 }
 
 /**
@@ -712,18 +744,21 @@ void afLib::queueInit() {
  */
 int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attributeId, uint16_t valueLen,
                     const uint8_t *value, const uint8_t status, const uint8_t reason) {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        if (_requestQueue[i].p_value == NULL) {
-            _requestQueue[i].messageType = messageType;
-            _requestQueue[i].attrId = attributeId;
-            _requestQueue[i].requestId = requestId;
-            _requestQueue[i].valueLen = valueLen;
-            _requestQueue[i].p_value = new uint8_t[valueLen];
-            memcpy(_requestQueue[i].p_value, value, valueLen);
-            _requestQueue[i].status = status;
-            _requestQueue[i].reason = reason;
-            return afSUCCESS;
-        }
+
+    queue_t volatile *p_q = &s_request_queue;
+    request_t *p_event = (request_t *)AF_QUEUE_ELEM_ALLOC_FROM_INTERRUPT(p_q);
+    if (p_event != NULL) {
+        p_event->messageType = messageType;
+        p_event->attrId = attributeId;
+        p_event->requestId = requestId;
+        p_event->valueLen = valueLen;
+        p_event->p_value = new uint8_t[valueLen];
+        memcpy(p_event->p_value, value, valueLen);
+        p_event->status = status;
+        p_event->reason = reason;
+
+        AF_QUEUE_PUT_FROM_INTERRUPT(p_q, p_event);
+        return afSUCCESS;
     }
 
     return afERROR_QUEUE_OVERFLOW;
@@ -736,20 +771,22 @@ int afLib::queuePut(uint8_t messageType, uint8_t requestId, const uint16_t attri
  */
 int afLib::queueGet(uint8_t *messageType, uint8_t *requestId, uint16_t *attributeId, uint16_t *valueLen,
                     uint8_t **value, uint8_t *status, uint8_t *reason) {
-    for (int i = 0; i < REQUEST_QUEUE_SIZE; i++) {
-        if (_requestQueue[i].p_value != NULL) {
-            *messageType = _requestQueue[i].messageType;
-            *attributeId = _requestQueue[i].attrId;
-            *requestId = _requestQueue[i].requestId;
-            *valueLen = _requestQueue[i].valueLen;
-            *value = new uint8_t[*valueLen];
-            memcpy(*value, _requestQueue[i].p_value, *valueLen);
-            delete (_requestQueue[i].p_value);
-            _requestQueue[i].p_value = NULL;
-            *status = _requestQueue[i].status;
-            *reason = _requestQueue[i].reason;
-            return afSUCCESS;
-        }
+
+    if (AF_QUEUE_PEEK_FROM_INTERRUPT(&s_request_queue)) {
+        request_t *p_event = (request_t *)AF_QUEUE_GET_FROM_INTERRUPT(&s_request_queue);
+        *messageType = p_event->messageType;
+        *attributeId = p_event->attrId;
+        *requestId = p_event->requestId;
+        *valueLen = p_event->valueLen;
+        *value = new uint8_t[*valueLen];
+        memcpy(*value, p_event->p_value, *valueLen);
+        delete (p_event->p_value);
+        p_event->p_value = NULL;
+        *status = p_event->status;
+        *reason = p_event->reason;
+
+        AF_QUEUE_ELEM_FREE_FROM_INTERRUPT(&s_request_queue, p_event);
+        return afSUCCESS;
     }
 
     return afERROR_QUEUE_UNDERFLOW;
@@ -785,7 +822,7 @@ void afLib::dumpBytes(char *label, int len, uint8_t *bytes) {
 /**
  * printState
  *
- * Print the current state of the afLib state machine. For debugging, just remove the return statement.
+ * Print the current state of the afLib state machine.
  */
 void afLib::printState(int state) {
 #if (defined(DEBUG_TRANSPORT) && DEBUG_TRANSPORT > 0)

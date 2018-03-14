@@ -2,9 +2,9 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1501606530194,
-	"deviceProfileId": "120231d5-cb0c-4898-a061-56895014db50",
-	"presentationId": "7f9f42d5-4949-4978-8e20-5021e4e9ed47",
+	"createdTimestamp": 1501605543054,
+	"deviceProfileId": "4d6fdab3-a0cf-48e2-abc8-ba8a641f1a38",
+	"presentationId": "6980b4cd-55c1-41ca-b451-d87acf55684b",
 	"presentationDefinition": {
 		"label": "boebot_tank",
 		"attributeOptions": {

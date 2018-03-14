@@ -19,6 +19,8 @@
 #include <SPI.h>
 #include <iafLib.h>
 #include <ArduinoSPI.h>
+#include <ModuleStates.h>
+#include <ModuleCommands.h>
 #include "profile/device-description.h"
 
 #define INT_PIN                 2
@@ -41,6 +43,9 @@
 iafLib *aflib;
 int state = STATE_INIT;
 unsigned long start;
+
+bool reboot_pending = false;            // Track information that a reboot is needed, e.g. if we received an OTA firmware update.
+
 
 Servo leftWheel;
 Servo rightWheel;
@@ -180,7 +185,7 @@ bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const u
         break;
     }
 
-    // Return value from this call informs service whether or not MCU was able to update local state to reflect the 
+    // Return value from this call informs service whether or not MCU was able to update local state to reflect the
     // attribute change that triggered callback.
     // Return false here if your MCU was unable to update local state to correspond with the attribute change that occurred;
     // return true if MCU was successful.
@@ -209,7 +214,33 @@ void attrNotifyHandler(const uint8_t requestId,
     case AF_SERVO2:
         updateLeftServoSpeed(valAsInt);
         break;
+
+    case AF_SYSTEM_ASR_STATE:
+        Serial.print("ASR state: ");
+        switch (value[0]) {
+        case MODULE_STATE_REBOOTED:
+            Serial.println("Rebooted");
+            break;
+
+        case MODULE_STATE_LINKED:
+            Serial.println("Linked");
+            break;
+
+        case MODULE_STATE_UPDATING:
+            Serial.println("Updating");
+            break;
+
+        case MODULE_STATE_UPDATE_READY:
+            Serial.println("Update ready - reboot requested");
+            reboot_pending = true;
+            break;
+
+        default:
+            break;
+        }
+        break;
     }
+
 }
 
 void ISRWrapper() {
@@ -243,6 +274,13 @@ void setup() {
 }
 
 void loop() {
+
+    // If we were asked to reboot (e.g. after an OTA firmware update), make the call here in loop()
+    // and retry as necessary
+    if (reboot_pending) {
+       int retVal = aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT);
+       reboot_pending = (retVal != 0);
+    }
 
     switch (state) {
     case STATE_INIT:

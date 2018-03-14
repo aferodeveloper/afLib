@@ -1,9 +1,15 @@
 /*
  * Afero Device Profile header file
- * Device Description:		9ff8e5cd-3c4d-495d-80c1-b42b5c05f907
+ * Device Description:		2e163e38-183b-41e9-8ce7-bfe820224b92
  * Schema Version:	2
  */
 
+#define AF_BOARD_MODULO_1                                          0
+#define AF_BOARD_MODULO_2                                          1
+#define AF_BOARD_QUANTA                                            2
+#define AF_BOARD_ABELO_2A                                          3
+
+#define AF_BOARD                                   AF_BOARD_MODULO_1
 
 #define ATTRIBUTE_TYPE_SINT8                                       2
 #define ATTRIBUTE_TYPE_SINT16                                      3
@@ -15,15 +21,25 @@
 #define ATTRIBUTE_TYPE_FIXED_16_16                                 6
 
 //region Service ID 1
-// Attribute Servo_Right
-#define AF_SERVO_RIGHT                                             1
-#define AF_SERVO_RIGHT_SZ                                          2
-#define AF_SERVO_RIGHT_TYPE                    ATTRIBUTE_TYPE_SINT16
+// Attribute LED
+#define AF_LED                                                  1024
+#define AF_LED_SZ                                                  2
+#define AF_LED_TYPE                            ATTRIBUTE_TYPE_SINT16
 
-// Attribute Servo_Left
-#define AF_SERVO_LEFT                                              2
-#define AF_SERVO_LEFT_SZ                                           2
-#define AF_SERVO_LEFT_TYPE                     ATTRIBUTE_TYPE_SINT16
+// Attribute GPIO 0 Configuration
+#define AF_GPIO_0_CONFIGURATION                                 1025
+#define AF_GPIO_0_CONFIGURATION_SZ                                 8
+#define AF_GPIO_0_CONFIGURATION_TYPE           ATTRIBUTE_TYPE_SINT64
+
+// Attribute Button
+#define AF_BUTTON                                               1030
+#define AF_BUTTON_SZ                                               2
+#define AF_BUTTON_TYPE                         ATTRIBUTE_TYPE_SINT16
+
+// Attribute GPIO 3 Configuration
+#define AF_GPIO_3_CONFIGURATION                                 1031
+#define AF_GPIO_3_CONFIGURATION_SZ                                 8
+#define AF_GPIO_3_CONFIGURATION_TYPE           ATTRIBUTE_TYPE_SINT64
 
 // Attribute Bootloader Version
 #define AF_BOOTLOADER_VERSION                                   2001
@@ -44,6 +60,11 @@
 #define AF_PROFILE_VERSION                                      2004
 #define AF_PROFILE_VERSION_SZ                                      8
 #define AF_PROFILE_VERSION_TYPE                ATTRIBUTE_TYPE_SINT64
+
+// Attribute UTC Offset Data
+#define AF_SYSTEM_UTC_OFFSET_DATA                              65001
+#define AF_SYSTEM_UTC_OFFSET_DATA_SZ                               8
+#define AF_SYSTEM_UTC_OFFSET_DATA_TYPE          ATTRIBUTE_TYPE_BYTES
 
 // Attribute Command
 #define AF_SYSTEM_COMMAND                                      65012

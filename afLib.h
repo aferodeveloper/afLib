@@ -102,7 +102,6 @@ private:
     StatusCommand *_rxStatus;
 
     request_t _request;
-    request_t _requestQueue[REQUEST_QUEUE_SIZE];
 
 #ifdef ATTRIBUTE_CLI
     int parseCommand(const char *cmd);

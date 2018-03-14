@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 1.2.114**
+**Version 1.3.157**
 
 ## Welcome ##
 
@@ -10,7 +10,7 @@ This version of the library support both the Arduino and Linux platforms.
 
 ### Supported Arduino Platforms ###
 
-This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560* and *Raspberry PI*.
+This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560*. *Raspberry PI* support is included out currently out of sync with the Arduino version. This should be fixed in the next afLib release.
 
 ### Arduino Installation ###
 
@@ -30,6 +30,16 @@ This version of the library has been tested against *UNO*, *Teensy*, *ATmega2560
 <http://developer.afero.io>
 
 ### Release Notes ###
+
+afLib 1.3.153 3/14/18 Release Notes
+
+* Fixed internal afLib FIFO queues that sometimes weren't FIFO
+* Updated Modulo-2 profiles for example projects
+* added getReason() call to get a reason code for why an update happened
+* hide "fake" fuzzing traffic from MCU to keep MCU from having to process it
+* updated debugging code in afBlink to current standards
+* added example app to get linked timestamp and device UTC offset data (aflib_time_check)
+
 
 afLib 1.2.114 7/25/17 Release Notes
 

@@ -74,7 +74,7 @@
 #define BLINK_INTERVAL            1000
 
 #define ATTR_PRINT_HEADER_LEN     60
-#define ATTR_PRINT_MAX_VALUE_LEN  256
+#define ATTR_PRINT_MAX_VALUE_LEN  512   // Each byte is 2 ASCII characters in HEX.
 #define ATTR_PRINT_BUFFER_LEN     (ATTR_PRINT_HEADER_LEN + ATTR_PRINT_MAX_VALUE_LEN)
 
 /**
@@ -86,6 +86,8 @@ volatile bool blinking = false;
 volatile bool moduloLEDIsOn = false;      // Track whether the Modulo LED is on
 volatile uint16_t moduleButtonValue = 1;  // Track the button value so we know when it has changed
 char attr_print_buffer[ATTR_PRINT_BUFFER_LEN];
+
+bool reboot_pending = false;              // Track information that a reboot is needed, e.g. if we received an OTA firmware update.
 
 /**
  * Forward definitions
@@ -158,6 +160,13 @@ void setup() {
 }
 
 void loop() {
+    // If we were asked to reboot (e.g. after an OTA firmware update), make the call here in loop()
+    // and retry as necessary
+    if (reboot_pending) {
+       int retVal = aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT);
+       reboot_pending = (retVal != 0);
+    }
+
     if (blinking) {
         if (millis() - lastBlink > BLINK_INTERVAL) {
             toggleModuloLED();
@@ -230,10 +239,8 @@ void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, cons
                     break;
 
                 case MODULE_STATE_UPDATE_READY:
-                    Serial.println("Update ready - rebooting");
-                    while (aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT) != afSUCCESS) {
-                        aflib->loop();
-                    }
+                    Serial.println("Update ready - reboot requested");
+                    reboot_pending = true;
                     break;
 
                 default:
@@ -285,28 +292,36 @@ void getPrintAttrHeader(const char *sourceLabel, const char *attrLabel, const ui
 
 void printAttrBool(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    strcat(attr_print_buffer, *value == 1 ? "true" : "false");
+    if (valueLen > 0) {
+        strcat(attr_print_buffer, *value == 1 ? "true" : "false");
+    }
     Serial.println(attr_print_buffer);
 }
 
 void printAttr8(const char *sourceLabel, const char *attrLabel, const uint8_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    char intStr[6];
-    strcat(attr_print_buffer, itoa(*((uint8_t *)value), intStr, 10));
+    if (valueLen > 0) {
+        char intStr[6];
+        strcat(attr_print_buffer, itoa(*((int8_t *)value), intStr, 10));
+    }
     Serial.println(attr_print_buffer);
 }
 
 void printAttr16(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    char intStr[6];
-    strcat(attr_print_buffer, itoa(*((uint16_t *)value), intStr, 10));
+    if (valueLen > 0) {
+        char intStr[6];
+        strcat(attr_print_buffer, itoa(*((int16_t *)value), intStr, 10));
+    }
     Serial.println(attr_print_buffer);
 }
 
 void printAttr32(const char *sourceLabel, const char *attrLabel, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
     getPrintAttrHeader(sourceLabel, attrLabel, attributeId, valueLen);
-    char intStr[11];
-    strcat(attr_print_buffer, itoa(*((uint32_t *)value), intStr, 10));
+    if (valueLen > 0) {
+        char intStr[11];
+        strcat(attr_print_buffer, itoa(*((int32_t *)value), intStr, 10));
+    }
     Serial.println(attr_print_buffer);
 }
 

@@ -1,0 +1,27 @@
+{
+	"deviceTypeId": "c44f3625-b7da-4507-89e8-4a163103c981",
+	"partnerId": "7f657c1e-ac45-4e42-a468-e1e187647c2f",
+	"name": "aflib_time_check",
+	"description": "This profile is used the in aflib_time_check Arduino example application. The example application only reads system attributes, so no user attributes are defined here other than enabling MCU support.",
+	"createdTimestamp": 1513034127862,
+	"updatedTimestamp": 1513034127862,
+	"virtual": false,
+	"deviceTags": [],
+	"disconnectNotificationLevel": "LOW",
+	"moduleConfiguration": {
+		"id": "70ad45b7-01cb-4480-9ff4-4bf7038badb0",
+		"name": "Modulo-1",
+		"module": {
+			"id": "2ac32178-1a4a-4e27-b712-8cbda49e04dd",
+			"name": "ASR-1",
+			"createdTimestampMs": 1497546303479,
+			"updatedTimestampMs": 1497546303479
+		},
+		"minimumFirmwareVersions": {
+			"2003": "20578"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1497546414108,
+		"updatedTimestampMs": 1497546414108
+	}
+}

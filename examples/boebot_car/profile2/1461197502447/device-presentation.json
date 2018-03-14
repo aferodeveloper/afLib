@@ -2,9 +2,9 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1501606909084,
-	"deviceProfileId": "3ed20b06-31b6-4d89-a309-74957d2eb466",
-	"presentationId": "b4d4d0ce-425e-46b4-a0bb-e810d8e21bdb",
+	"createdTimestamp": 1501607012863,
+	"deviceProfileId": "3ebd32f3-1ff8-4669-965b-70f67dca2b8d",
+	"presentationId": "a2559f28-06c5-4aca-9829-37dfa4a86bbb",
 	"presentationDefinition": {
 		"label": "boebot_car",
 		"attributeOptions": {

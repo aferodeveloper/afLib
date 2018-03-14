@@ -55,6 +55,8 @@ public:
 
     uint16_t getBytes(uint8_t *bytes);
 
+    uint8_t getReason();
+
     bool isValid();
 
     void dump();

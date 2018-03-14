@@ -215,6 +215,10 @@ uint16_t Command::getBytes(uint8_t *bytes) {
     return len;
 }
 
+uint8_t Command::getReason() {
+    return _reason;
+}
+
 bool Command::isValid() {
     return (_cmd == MSG_TYPE_SET) || (_cmd == MSG_TYPE_GET) || (_cmd == MSG_TYPE_UPDATE);
 }

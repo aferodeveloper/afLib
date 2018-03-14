@@ -19,6 +19,8 @@
 #include <SPI.h>
 #include <iafLib.h>
 #include <ArduinoSPI.h>
+#include <ModuleStates.h>
+#include <ModuleCommands.h>
 #include "profile/device-description.h"
 
 #define INT_PIN                 2
@@ -34,6 +36,8 @@
 iafLib *aflib;
 int state = STATE_INIT;
 unsigned long start;
+
+bool reboot_pending = false;            // Track information that a reboot is needed, e.g. if we received an OTA firmware update.
 
 Servo leftWheel;
 Servo rightWheel;
@@ -64,9 +68,9 @@ void updateLeftServoSpeed(int newValue) {
 
 // attrSetHandler() is called when a client changes an attribute.
 bool attrSetHandler(const uint8_t requestId,
-               const uint16_t attributeId,
-               const uint16_t valueLen,
-               const uint8_t *value) {
+                    const uint16_t attributeId,
+                    const uint16_t valueLen,
+                    const uint8_t *value) {
 
     int valAsInt = *((int *)value);
 
@@ -95,8 +99,42 @@ void attrNotifyHandler(const uint8_t requestId, const uint16_t attributeId, cons
     int valAsInt = *((int *)value);
 
     if (DEBUG) {
-        Serial.print("attrNotifyHandler() attrId: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(valAsInt);
+        Serial.print("attrNotifyHandler() attrId: ");
+        Serial.print(attributeId);
+        Serial.print(" value: ");
+        Serial.println(valAsInt);
     }
+
+    switch (attributeId) {
+        case AF_SYSTEM_ASR_STATE:
+            Serial.print("ASR state: ");
+            switch (value[0]) {
+            case MODULE_STATE_REBOOTED:
+                Serial.println("Rebooted");
+                break;
+
+            case MODULE_STATE_LINKED:
+                Serial.println("Linked");
+                break;
+
+            case MODULE_STATE_UPDATING:
+                Serial.println("Updating");
+                break;
+
+            case MODULE_STATE_UPDATE_READY:
+                Serial.println("Update ready - reboot requested");
+                reboot_pending = true;
+                break;
+
+            default:
+                break;
+            }
+            break;
+
+        default:
+            break;
+    }
+
 }
 
 void ISRWrapper() {
@@ -111,6 +149,7 @@ void setup() {
     while (!Serial) {
         ;
     }
+    Serial.println("Serial up; script starting.");
 
     // Set the pins for the servos
     leftWheel.attach(3);
@@ -124,6 +163,13 @@ void setup() {
 }
 
 void loop() {
+
+    // If we were asked to reboot (e.g. after an OTA firmware update), make the call here in loop()
+    // and retry as necessary
+    if (reboot_pending) {
+       int retVal = aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT);
+       reboot_pending = (retVal != 0);
+    }
 
     switch (state) {
 
