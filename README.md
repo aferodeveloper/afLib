@@ -29,7 +29,7 @@ This version of the library supports Arduino compatible MCUs. It has been tested
 
 ### Release Notes ###
 
-afLib 1.3.197 3/23/18 Release Notes
+afLib 1.3.203 3/23/18 Release Notes
 
 * This release of afLib (v1.3) is now DEPRECATED.
 * afLib will remain available for compatibility with existing projects, but please use afLib2 for new projects
