@@ -1,6 +1,6 @@
 # Afero Secure Radio Library #
 
-**Version 1.3.dev**
+**Version 1.3**
 
 2018-Apr-02: Important news: As of this release this version of afLib is **deprecated**. It will remain available for compatibility with existing code, but for new projects please use **afLib2** at <https://github.com/aferodeveloper/afLib2>.
 
@@ -29,7 +29,7 @@ This version of the library supports Arduino compatible MCUs. It has been tested
 
 ### Release Notes ###
 
-afLib 1.3.203 3/23/18 Release Notes
+afLib 1.3.204 3/23/18 Release Notes
 
 * This release of afLib (v1.3) is now DEPRECATED.
 * afLib will remain available for compatibility with existing projects, but please use afLib2 for new projects
