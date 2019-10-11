@@ -1,5 +1,5 @@
 {
-	"deviceDescriptionId": "4f46346d-7094-4839-95f2-29219559c354",
+	"deviceDescriptionId": "c2398a62-f23f-48d4-95ff-d0639f6c75e1",
 	"partnerId": "517118a8-42e2-4143-92a2-876b29aa2c0a",
 	"schemaVersion": 2,
 	"services": [
@@ -135,7 +135,7 @@
 				{
 					"id": 65001,
 					"dataType": "BYTES",
-					"semanticType": "UTC Offset",
+					"semanticType": "UTC Offset Data",
 					"operations": [
 						"READ",
 						"WRITE"
@@ -349,5 +349,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1501607010768
+	"createdTimestamp": 1521848121016
 }

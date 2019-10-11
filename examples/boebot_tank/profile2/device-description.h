@@ -1,9 +1,16 @@
 /*
  * Afero Device Profile header file
- * Device Description:		4a99e49f-9160-4268-b3c6-9016a9eb8079
+ * Device Description:		9897ad74-d5f7-4794-a529-b8acd4f23c09
  * Schema Version:	2
  */
 
+#define AF_BOARD_MODULO_1                                            0
+#define AF_BOARD_MODULO_2                                            1
+#define AF_BOARD_QUANTA                                              2
+#define AF_BOARD_ABELO_2A                                            3
+#define AF_BOARD_PROTOTYPE_HUB                                       4
+
+#define AF_BOARD                                     AF_BOARD_MODULO_2
 
 #define ATTRIBUTE_TYPE_SINT8                                         2
 #define ATTRIBUTE_TYPE_SINT16                                        3
@@ -50,10 +57,10 @@
 #define AF_OFFLINE_SCHEDULES_ENABLED_SZ                              2
 #define AF_OFFLINE_SCHEDULES_ENABLED_TYPE        ATTRIBUTE_TYPE_SINT16
 
-// Attribute UTC Offset
-#define AF_SYSTEM_UTC_OFFSET                                     65001
-#define AF_SYSTEM_UTC_OFFSET_SZ                                      8
-#define AF_SYSTEM_UTC_OFFSET_TYPE                 ATTRIBUTE_TYPE_BYTES
+// Attribute UTC Offset Data
+#define AF_SYSTEM_UTC_OFFSET_DATA                                65001
+#define AF_SYSTEM_UTC_OFFSET_DATA_SZ                                 8
+#define AF_SYSTEM_UTC_OFFSET_DATA_TYPE            ATTRIBUTE_TYPE_BYTES
 
 // Attribute Connected SSID
 #define AF_SYSTEM_CONNECTED_SSID                                 65004

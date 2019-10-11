@@ -1,13 +1,27 @@
 {
-	"name": "Blink",
-	"description": "This profile is used with the Blink example to demonstrate using MCU and I/O attributes from either UNO or Teensy.",
-	"createdTimestamp": 1456436459152,
-	"updatedTimestamp": 1490231652581,
-	"deviceTypeId": "6c19d2d9-fc03-4441-96eb-b612f4177c8e",
+	"name": "afBlink",
+	"description": "This profile is used with the afBlink example to demonstrate using MCU and I/O attributes an attached Arduino-compatible MCU.",
+	"createdTimestamp": 1522374696693,
+	"updatedTimestamp": 1522374861162,
+	"deviceTypeId": "e0466da5-7577-4c70-8a92-4b2c5d6aceef",
 	"partnerId": "",
 	"disconnectNotificationLevel": "MEDIUM",
 	"virtual": false,
 	"deviceTags": [],
-	"transferSecurity": "EXPLICIT_RELEASE",
-	"module": "ASR-1"
+	"moduleConfiguration": {
+		"id": "70ad45b7-01cb-4480-9ff4-4bf7038badb0",
+		"name": "Modulo-1",
+		"module": {
+			"id": "2ac32178-1a4a-4e27-b712-8cbda49e04dd",
+			"name": "ASR-1",
+			"createdTimestampMs": 1497546303479,
+			"updatedTimestampMs": 1497546303479
+		},
+		"minimumFirmwareVersions": {
+			"2003": "20578"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1497546414108,
+		"updatedTimestampMs": 1497546414108
+	}
 }

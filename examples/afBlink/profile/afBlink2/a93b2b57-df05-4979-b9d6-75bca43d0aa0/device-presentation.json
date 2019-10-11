@@ -2,11 +2,11 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1497042761463,
-	"deviceProfileId": "d613c854-71dc-4748-9e0b-fc72faf86936",
-	"presentationId": "86680975-ff37-40bd-b57c-35ea2c3fdf42",
+	"createdTimestamp": 1522376284391,
+	"deviceProfileId": "95fe863b-2f85-424e-b800-e1637aa09ba4",
+	"presentationId": "9d21e70c-b2ee-4c5e-8d57-c67d4dc420d3",
 	"presentationDefinition": {
-		"label": "Blink",
+		"label": "afBlink2",
 		"attributeOptions": {
 			"1": {
 				"flags": [
@@ -52,17 +52,17 @@
 			}
 		},
 		"gauge": {
-			"background": {
-				"images": []
-			},
-			"displayRules": [],
 			"foreground": {
 				"images": [
 					{
 						"uri": "device_icon_light.png"
 					}
 				]
-			}
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
 		},
 		"groups": [
 			{

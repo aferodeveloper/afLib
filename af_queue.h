@@ -9,7 +9,6 @@
 #define AF_QUEUE_H
 
 #include <stdint.h>
-#include <Arduino.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -47,7 +46,7 @@ typedef struct queue_s
     af_queue_elem_desc_t *p_free_head;
 } queue_t;
 
-void af_queue_init_system(uint8_t (*p_preemption_disable)(void), void (*p_preemption_enable)(uint8_t is_nested), Stream *theLog);
+void af_queue_init_system(uint8_t (*p_preemption_disable)(void), void (*p_preemption_enable)(uint8_t is_nested));
 void af_queue_init(queue_t *p_q, int elem_size, int max_elem, uint8_t *p_mem);
 void *af_queue_peek(queue_t *p_q);
 void *af_queue_peek_from_interrupt(queue_t *p_q);

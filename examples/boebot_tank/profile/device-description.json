@@ -1,5 +1,5 @@
 {
-	"deviceDescriptionId": "9ff8e5cd-3c4d-495d-80c1-b42b5c05f907",
+	"deviceDescriptionId": "7b022ac6-2c6c-490a-9f11-ca3da5f196f9",
 	"partnerId": "517118a8-42e2-4143-92a2-876b29aa2c0a",
 	"schemaVersion": 2,
 	"services": [
@@ -66,6 +66,17 @@
 					"semanticType": "Profile Version",
 					"operations": [
 						"READ"
+					],
+					"length": 8,
+					"value": null
+				},
+				{
+					"id": 65001,
+					"dataType": "BYTES",
+					"semanticType": "UTC Offset Data",
+					"operations": [
+						"READ",
+						"WRITE"
 					],
 					"length": 8,
 					"value": null
@@ -205,5 +216,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1501606527827
+	"createdTimestamp": 1521841496230
 }

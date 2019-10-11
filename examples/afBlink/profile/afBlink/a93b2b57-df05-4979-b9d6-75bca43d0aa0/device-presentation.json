@@ -2,11 +2,11 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1494862620848,
-	"deviceProfileId": "b098cf7a-c509-4d17-9bc8-f1ee5bab0c2f",
-	"presentationId": "6d6ccafa-d2be-4594-a977-28f226b50dbc",
+	"createdTimestamp": 1522376672237,
+	"deviceProfileId": "a2ae90ef-49e1-4d76-93f2-bd98f9551812",
+	"presentationId": "b74afc57-acb7-45ac-96ad-f8d60347ed71",
 	"presentationDefinition": {
-		"label": "Blink",
+		"label": "afBlink",
 		"attributeOptions": {
 			"1": {
 				"flags": [
@@ -29,25 +29,46 @@
 						"match": "true"
 					}
 				]
+			},
+			"1024": {
+				"flags": [],
+				"label": "LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "Off",
+							"state": "standby"
+						},
+						"match": "1"
+					},
+					{
+						"apply": {
+							"label": "On",
+							"state": "standby"
+						},
+						"match": "0"
+					}
+				]
 			}
 		},
 		"gauge": {
-			"background": {
-				"images": []
-			},
-			"displayRules": [],
 			"foreground": {
 				"images": [
 					{
 						"uri": "device_icon_light.png"
 					}
 				]
-			}
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
 		},
 		"groups": [
 			{
 				"controls": [
-					1
+					1,
+					2
 				],
 				"gauge": {
 					"background": {
@@ -76,6 +97,14 @@
 				},
 				"controlType": "menuControl",
 				"id": 1,
+				"displayRules": []
+			},
+			{
+				"attributeMap": {
+					"value": 1024
+				},
+				"controlType": "menuControl",
+				"id": 2,
 				"displayRules": []
 			}
 		]

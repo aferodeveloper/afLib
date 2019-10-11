@@ -1,14 +1,13 @@
 {
-	"name": "Blink",
+	"name": "afBlink",
 	"createDate": 1449612695934,
 	"originalProfileId": "",
-	"latestProfileId": "b098cf7a-c509-4d17-9bc8-f1ee5bab0c2f",
+	"latestProfileId": "a2ae90ef-49e1-4d76-93f2-bd98f9551812",
 	"presentationProfileList": [
-		"6d6ccafa-d2be-4594-a977-28f226b50dbc"
+		"b74afc57-acb7-45ac-96ad-f8d60347ed71"
 	],
 	"presentationDirMap": {
-		"6d6ccafa-d2be-4594-a977-28f226b50dbc": "a93b2b57-df05-4979-b9d6-75bca43d0aa0"
+		"b74afc57-acb7-45ac-96ad-f8d60347ed71": "a93b2b57-df05-4979-b9d6-75bca43d0aa0"
 	},
-	"apeVersion": "1.0.1-dev.447",
-	"debugBuild": true
+	"apeVersion": "1.3.1"
 }

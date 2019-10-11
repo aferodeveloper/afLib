@@ -1,9 +1,15 @@
 /*
  * Afero Device Profile header file
- * Device Description:		df5ddbd8-bd42-42d3-92f0-0ac6fa3b5ed4
+ * Device Description:		47268272-b611-4af5-8e1b-a4c70e6d9b46
  * Schema Version:	2
  */
 
+#define AF_BOARD_MODULO_1                                          0
+#define AF_BOARD_MODULO_2                                          1
+#define AF_BOARD_QUANTA                                            2
+#define AF_BOARD_ABELO_2A                                          3
+
+#define AF_BOARD                                   AF_BOARD_MODULO_1
 
 #define ATTRIBUTE_TYPE_SINT8                                       2
 #define ATTRIBUTE_TYPE_SINT16                                      3
@@ -59,6 +65,11 @@
 #define AF_PROFILE_VERSION                                      2004
 #define AF_PROFILE_VERSION_SZ                                      8
 #define AF_PROFILE_VERSION_TYPE                ATTRIBUTE_TYPE_SINT64
+
+// Attribute UTC Offset Data
+#define AF_SYSTEM_UTC_OFFSET_DATA                              65001
+#define AF_SYSTEM_UTC_OFFSET_DATA_SZ                               8
+#define AF_SYSTEM_UTC_OFFSET_DATA_TYPE          ATTRIBUTE_TYPE_BYTES
 
 // Attribute Command
 #define AF_SYSTEM_COMMAND                                      65012

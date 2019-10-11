@@ -2,9 +2,9 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1501605543054,
-	"deviceProfileId": "4d6fdab3-a0cf-48e2-abc8-ba8a641f1a38",
-	"presentationId": "6980b4cd-55c1-41ca-b451-d87acf55684b",
+	"createdTimestamp": 1521842413392,
+	"deviceProfileId": "e37e5282-8e73-4118-ab7d-7c5f2234ab66",
+	"presentationId": "c37305a0-0ba0-4962-9812-d6a4d9e2dd98",
 	"presentationDefinition": {
 		"label": "boebot_tank",
 		"attributeOptions": {
@@ -81,7 +81,15 @@
 				},
 				"controlType": "slider",
 				"id": 1,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE"
+						}
+					}
+				]
 			},
 			{
 				"attributeMap": {
@@ -89,7 +97,15 @@
 				},
 				"controlType": "slider",
 				"id": 2,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE"
+						}
+					}
+				]
 			}
 		]
 	}

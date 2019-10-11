@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Afero, Inc.
+ * Copyright 2017-2018 Afero, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 #include <Servo.h>
 
 #include <SPI.h>
-#include <iafLib.h>
-#include <ArduinoSPI.h>
-#include <ModuleStates.h>
-#include <ModuleCommands.h>
+#include "af_lib.h"
+#include "af_logger.h"
+#include "arduino_logger.h"
+#include "arduino_spi.h"
+#include "af_module_commands.h"
+#include "af_module_states.h"
+#include "arduino_transport.h"
 #include "profile/device-description.h"
 
-#define INT_PIN                 2
+#define INT_PIN                 2     // INT_PIN 2 for UNO
 #define CS_PIN                  10    // Standard SPI chip select (aka SS)
 
 #define STARTUP_DELAY_MILLIS    10000
@@ -40,7 +43,7 @@
 #define TRANS_PARK              0
 #define TRANS_REVERSE           -1
 
-iafLib *aflib;
+af_lib_t *af_lib;
 int state = STATE_INIT;
 unsigned long start;
 
@@ -69,7 +72,7 @@ boolean DEBUG = true;
 void updateRightServoSpeed(int newValue) {
     currentRightSpeed = newValue;
     if (DEBUG) {
-        Serial.print("Updating RIGHT servo with speed: "); Serial.println(currentRightSpeed);
+        af_logger_print_buffer("Updating RIGHT servo with speed: "); af_logger_println_value(currentRightSpeed);
     }
     rightWheel.writeMicroseconds(currentRightSpeed);
 }
@@ -77,7 +80,7 @@ void updateRightServoSpeed(int newValue) {
 void updateLeftServoSpeed(int newValue) {
     currentLeftSpeed = newValue;
     if (DEBUG) {
-        Serial.print("Updating LEFT servo speed: "); Serial.println(currentLeftSpeed);
+        af_logger_print_buffer("Updating LEFT servo speed: "); af_logger_println_value(currentLeftSpeed);
     }
     leftWheel.writeMicroseconds(currentLeftSpeed);
 }
@@ -96,7 +99,7 @@ int limitSpeed(int speed) {
 int carUpdateAccelerator(int newValue) {
     currentAccelVal = newValue;
     if (DEBUG) {
-        Serial.print("ACCELERATOR UPDATE EVENT. Value: "); Serial.println(currentAccelVal);
+        af_logger_print_buffer("ACCELERATOR UPDATE EVENT. Value: "); af_logger_println_value(currentAccelVal);
     }
     int accelDelta = currentAccelVal - lastAccelVal;
     // To move the BoEBOT in a given direction, the servos must rotate in opposite directions
@@ -110,7 +113,7 @@ int carUpdateAccelerator(int newValue) {
 int carUpdateSteering(int newValue) {
     currentSteeringVal = newValue;
     if (DEBUG) {
-        Serial.print("STEERING UPDATE EVENT. Value: "); Serial.println(currentSteeringVal);
+        af_logger_print_buffer("STEERING UPDATE EVENT. Value: "); af_logger_println_value(currentSteeringVal);
     }
     int steeringDelta = currentSteeringVal - lastSteeringVal;
     currentLeftSpeed += steeringDelta * currentTransVal;
@@ -123,7 +126,7 @@ int carUpdateSteering(int newValue) {
 int carUpdateTransmission(int newValue) {
     currentTransVal = newValue;
     if (DEBUG) {
-        Serial.print("TRANSMISSION UPDATE EVENT. Value: "); Serial.println(currentTransVal);
+        af_logger_print_buffer("TRANSMISSION UPDATE EVENT. Value: "); af_logger_println_value(currentTransVal);
     }
     switch (currentTransVal) {
     case (TRANS_PARK):
@@ -162,10 +165,13 @@ void initVars() {
 
 // attrSetHandler() is called when a client changes an attribute.
 bool attrSetHandler(const uint8_t requestId, const uint16_t attributeId, const uint16_t valueLen, const uint8_t *value) {
-    int valAsInt = *((int *)value);
+    int valAsInt = *((int16_t *)value);
 
     if (DEBUG) {
-        Serial.print("attrSetHandler() attrId: "); Serial.print(attributeId); Serial.print(" value: "); Serial.println(valAsInt);
+        af_logger_print_buffer("attrSetHandler() attrId: ");
+        af_logger_print_value(attributeId);
+        af_logger_print_buffer(" value: ");
+        af_logger_println_value(valAsInt);
     }
 
     switch (attributeId) {
@@ -197,13 +203,13 @@ void attrNotifyHandler(const uint8_t requestId,
                        const uint16_t attributeId,
                        const uint16_t valueLen,
                        const uint8_t *value) {
-    int valAsInt = *((int *)value);
+    int valAsInt = *((int16_t *)value);
 
     if (DEBUG) {
-        Serial.print("attrNotifyHandler() attrId: ");
-        Serial.print(attributeId);
-        Serial.print(" value: ");
-        Serial.println(valAsInt);
+        af_logger_print_buffer("attrNotifyHandler() attrId: ");
+        af_logger_print_value(attributeId);
+        af_logger_print_buffer(" value: ");
+        af_logger_println_value(valAsInt);
     }
 
     switch (attributeId) {
@@ -216,22 +222,22 @@ void attrNotifyHandler(const uint8_t requestId,
         break;
 
     case AF_SYSTEM_ASR_STATE:
-        Serial.print("ASR state: ");
+        af_logger_print_buffer("ASR state: ");
         switch (value[0]) {
-        case MODULE_STATE_REBOOTED:
-            Serial.println("Rebooted");
+        case AF_MODULE_STATE_REBOOTED:
+            af_logger_println_buffer("Rebooted");
             break;
 
-        case MODULE_STATE_LINKED:
-            Serial.println("Linked");
+        case AF_MODULE_STATE_LINKED:
+            af_logger_println_buffer("Linked");
             break;
 
-        case MODULE_STATE_UPDATING:
-            Serial.println("Updating");
+        case AF_MODULE_STATE_UPDATING:
+            af_logger_println_buffer("Updating");
             break;
 
-        case MODULE_STATE_UPDATE_READY:
-            Serial.println("Update ready - reboot requested");
+        case AF_MODULE_STATE_UPDATE_READY:
+            af_logger_println_buffer("Update ready - reboot requested");
             reboot_pending = true;
             break;
 
@@ -243,28 +249,19 @@ void attrNotifyHandler(const uint8_t requestId,
 
 }
 
-void ISRWrapper() {
-    if (aflib) {
-        aflib->mcuISR();
-    }
-}
-
 void setup() {
     if (DEBUG) {
-        Serial.begin(9600);
-        // Wait for Serial to be ready...
-        while (!Serial) {
-            ;
-        }
-        Serial.println("Serial up; debugging on, script starting.");
+        arduino_logger_start(9600);
+        af_logger_println_buffer("Serial up; debugging on, script starting.");
     }
 
     // Set the pins for the servos
     leftWheel.attach(3);
     rightWheel.attach(4);
 
-    afTransport *arduinoSPI = new ArduinoSPI(CS_PIN, &Serial);
-    aflib = iafLib::create(digitalPinToInterrupt(INT_PIN), ISRWrapper, attrSetHandler, attrNotifyHandler, &Serial, arduinoSPI);
+    af_transport_t *arduinoSPI = arduino_transport_create_spi(CS_PIN);
+    af_lib = af_lib_create(attrSetHandler, attrNotifyHandler, arduinoSPI);
+    arduino_spi_setup_interrupts(af_lib, digitalPinToInterrupt(INT_PIN));
 
     // Initialize variables
     initVars();
@@ -278,8 +275,8 @@ void loop() {
     // If we were asked to reboot (e.g. after an OTA firmware update), make the call here in loop()
     // and retry as necessary
     if (reboot_pending) {
-       int retVal = aflib->setAttribute32(AF_SYSTEM_COMMAND, MODULE_COMMAND_REBOOT);
-       reboot_pending = (retVal != 0);
+       int retVal = af_lib_set_attribute_32(af_lib, AF_SYSTEM_COMMAND, AF_MODULE_COMMAND_REBOOT);
+       reboot_pending = (retVal != AF_SUCCESS);
     }
 
     switch (state) {
@@ -295,24 +292,24 @@ void loop() {
     case STATE_UPDATE_ATTRS:
         // Could simply call setAttribute16() and ignore return value, but
         // we'll be more robust and retry until success
-        while (aflib->setAttribute16(AF_SERVO1, currentRightSpeed) != afSUCCESS) {
-            aflib->loop();
+        while (af_lib_set_attribute_16(af_lib, AF_SERVO1, currentRightSpeed) != AF_SUCCESS) {
+            af_lib_loop(af_lib);
         }
-        while (aflib->setAttribute16(AF_SERVO2, currentLeftSpeed) != afSUCCESS) {
-            aflib->loop();
+        while (af_lib_set_attribute_16(af_lib, AF_SERVO2, currentLeftSpeed) != AF_SUCCESS) {
+            af_lib_loop(af_lib);
         }
         if (currentTransVal == TRANS_PARK) {
             // If we're parked, make sure the UI gets reset
-            while (aflib->setAttribute16(AF_ACCEL_ATTR, 0) != afSUCCESS) {
-                aflib->loop();
+            while (af_lib_set_attribute_16(af_lib, AF_ACCEL_ATTR, 0) != AF_SUCCESS) {
+                af_lib_loop(af_lib);
             }
-            while (aflib->setAttribute16(AF_STEER_ATTR, 0) != afSUCCESS) {
-                aflib->loop();
+            while (af_lib_set_attribute_16(af_lib, AF_STEER_ATTR, 0) != AF_SUCCESS) {
+                af_lib_loop(af_lib);
             }
         }
         state = STATE_RUNNING;
         break;
     }
 
-    aflib->loop();
+    af_lib_loop(af_lib);
 }

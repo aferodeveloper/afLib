@@ -2,9 +2,9 @@
 	"active": true,
 	"valid": true,
 	"friendlyName": "Default Presentation",
-	"createdTimestamp": 1501607012863,
-	"deviceProfileId": "3ebd32f3-1ff8-4669-965b-70f67dca2b8d",
-	"presentationId": "a2559f28-06c5-4aca-9829-37dfa4a86bbb",
+	"createdTimestamp": 1521848124227,
+	"deviceProfileId": "32db6183-3b4f-4ba5-bfb5-a00a1ee52034",
+	"presentationId": "26d63463-16c2-40ab-8ead-41b2897ac110",
 	"presentationDefinition": {
 		"label": "boebot_car",
 		"attributeOptions": {
@@ -109,7 +109,15 @@
 				},
 				"controlType": "slider",
 				"id": 1,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE"
+						}
+					}
+				]
 			},
 			{
 				"attributeMap": {
@@ -117,7 +125,15 @@
 				},
 				"controlType": "slider",
 				"id": 2,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE"
+						}
+					}
+				]
 			},
 			{
 				"attributeMap": {
@@ -125,7 +141,15 @@
 				},
 				"controlType": "menuControl",
 				"id": 3,
-				"displayRules": []
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE"
+						}
+					}
+				]
 			}
 		]
 	}

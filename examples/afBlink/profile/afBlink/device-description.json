@@ -1,6 +1,6 @@
 {
-	"deviceDescriptionId": "df5ddbd8-bd42-42d3-92f0-0ac6fa3b5ed4",
-	"partnerId": "b0aab715-9f23-4d8d-a053-6f2ecd853e0f",
+	"deviceDescriptionId": "47268272-b611-4af5-8e1b-a4c70e6d9b46",
+	"partnerId": "1da7b817-882e-4074-91b2-ca57255ace0a",
 	"schemaVersion": 2,
 	"services": [
 		{
@@ -49,10 +49,7 @@
 						"READ"
 					],
 					"length": 2,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 1031,
@@ -73,10 +70,7 @@
 						"READ"
 					],
 					"length": 8,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 2002,
@@ -86,10 +80,7 @@
 						"READ"
 					],
 					"length": 8,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 2003,
@@ -99,10 +90,7 @@
 						"READ"
 					],
 					"length": 8,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 2004,
@@ -112,10 +100,18 @@
 						"READ"
 					],
 					"length": 8,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
+				},
+				{
+					"id": 65001,
+					"dataType": "BYTES",
+					"semanticType": "UTC Offset Data",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"length": 8,
+					"value": null
 				},
 				{
 					"id": 65002,
@@ -139,10 +135,7 @@
 						"MCU"
 					],
 					"length": 4,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65012,
@@ -152,10 +145,7 @@
 						"WRITE"
 					],
 					"length": 4,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65013,
@@ -165,10 +155,7 @@
 						"READ"
 					],
 					"length": 1,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65014,
@@ -178,10 +165,7 @@
 						"READ"
 					],
 					"length": 1,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65015,
@@ -191,10 +175,7 @@
 						"WRITE"
 					],
 					"length": 4,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65016,
@@ -218,10 +199,7 @@
 						"MCU"
 					],
 					"length": 32,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65018,
@@ -232,10 +210,7 @@
 						"MCU"
 					],
 					"length": 2,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65019,
@@ -245,10 +220,7 @@
 						"READ"
 					],
 					"length": 100,
-					"value": null,
-					"minValue": null,
-					"maxValue": null,
-					"stepValue": null
+					"value": null
 				},
 				{
 					"id": 65020,
@@ -258,8 +230,8 @@
 						"READ",
 						"MCU"
 					],
-					"defaultValue": "fa000000180018000C00A00F",
-					"value": "fa000000180018000C00A00F",
+					"defaultValue": "FA000000180018000C00A00F",
+					"value": "FA000000180018000C00A00F",
 					"length": 12
 				},
 				{
@@ -276,5 +248,5 @@
 			]
 		}
 	],
-	"createdTimestamp": 1494862619776
+	"createdTimestamp": 1522376670595
 }

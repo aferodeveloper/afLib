@@ -1,13 +1,13 @@
 {
-	"deviceTypeId": "679fc421-3d31-485d-b0c3-3def9e625bc4",
-	"partnerId": "517118a8-42e2-4143-92a2-876b29aa2c0a",
 	"name": "BoeBotTank_2",
 	"description": "Control Boe-Bot using independent right/left servos",
 	"createdTimestamp": 1501605426833,
 	"updatedTimestamp": 1501605426833,
+	"deviceTypeId": "679fc421-3d31-485d-b0c3-3def9e625bc4",
+	"partnerId": "",
+	"disconnectNotificationLevel": "LOW",
 	"virtual": false,
 	"deviceTags": [],
-	"disconnectNotificationLevel": "LOW",
 	"moduleConfiguration": {
 		"id": "fef3ff92-6a24-4d67-be93-cee8a5a5f7cb",
 		"name": "Modulo-2",
