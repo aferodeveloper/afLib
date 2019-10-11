@@ -2,6 +2,8 @@
 
 **Version 1.3**
 
+2019-Oct-11: afLib1 is now fully end-of-life. Please use the latest release of afLib for all development efforts. 
+
 2018-Apr-02: Important news: As of this release this version of afLib is **deprecated**. It will remain available for compatibility with existing code, but for new projects please use **afLib2** at <https://github.com/aferodeveloper/afLib2>.
 
 ## Welcome ##
