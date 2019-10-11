@@ -32,24 +32,30 @@ void arduino_logger_stop() {
 
 void af_logger_print_value(int32_t val) {
     Serial.print(val);
+    Serial.flush();
 }
 
 void af_logger_print_buffer(const char* val) {
     Serial.print(val);
+    Serial.flush();
 }
 
 void af_logger_print_formatted_value(int32_t val, af_logger_format_t format) {
     Serial.print(val, format);
+    Serial.flush();
 }
 
 void af_logger_println_value(int32_t val) {
     Serial.println(val);
+    Serial.flush();
 }
 
 void af_logger_println_buffer(const char* val) {
     Serial.println(val);
+    Serial.flush();
 }
 
 void af_logger_println_formatted_value(int32_t val, af_logger_format_t format) {
     Serial.println(val, format);
+    Serial.flush();
 }

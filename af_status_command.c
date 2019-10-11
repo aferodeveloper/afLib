@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <stdlib.h>
+
 #include "af_status_command.h"
 #include "af_logger.h"
 
@@ -102,18 +104,26 @@ void af_status_command_dump(af_status_command_t *af_status_command) {
 
 void af_status_command_dump_bytes(af_status_command_t *af_status_command) {
     int len = af_status_command_get_size(af_status_command);
-    uint8_t bytes[len];
+    uint8_t *bytes;
+    int i = 0;
+    int b;
+
+    bytes = (uint8_t *)malloc(len);
+    if (bytes == NULL) {
+        af_logger_print_buffer("malloc failed!");
+        return;
+    }
+
     af_status_command_get_bytes(af_status_command, bytes);
 
     af_logger_print_buffer("len  : ");
     af_logger_println_value(len);
     af_logger_print_buffer("data : ");
-    int i = 0;
     for (i = 0; i < len; i++) {
         if (i > 0) {
             af_logger_print_buffer(", ");
         }
-        int b = bytes[i] & 0xff;
+        b = bytes[i] & 0xff;
         if (b < 0x10) {
             af_logger_print_buffer("0x0");
             af_logger_print_formatted_value(b, AF_LOGGER_HEX);
@@ -123,5 +133,7 @@ void af_status_command_dump_bytes(af_status_command_t *af_status_command) {
         }
     }
     af_logger_println_buffer("");
+
+    free(bytes);
 }
 

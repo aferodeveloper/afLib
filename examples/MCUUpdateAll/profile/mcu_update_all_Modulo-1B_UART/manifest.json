@@ -1,0 +1,13 @@
+{
+	"name": "mcu_update_all_Modulo-1B_UART",
+	"createDate": 1559233071014,
+	"apeVersion": "1.8.4",
+	"originalProfileId": "",
+	"latestProfileId": "e83cb85e-a44e-4285-bd36-eaed46028893",
+	"presentationProfileList": [
+		"15e2b718-8639-4f1e-b8c4-da233d9a77bf"
+	],
+	"presentationDirMap": {
+		"15e2b718-8639-4f1e-b8c4-da233d9a77bf": "1531769137175"
+	}
+}

@@ -36,6 +36,7 @@ typedef uint8_t msg_type_t;
 #define MSG_TYPE_SET                            (MESSAGE_CHANNEL_BASE + 1)
 #define MSG_TYPE_GET                            (MESSAGE_CHANNEL_BASE + 2)
 #define MSG_TYPE_UPDATE                         (MESSAGE_CHANNEL_BASE + 3)
+#define MSG_TYPE_UPDATE_REJECTED                (MESSAGE_CHANNEL_BASE + 4)
 
 #define NEGOTIATOR_CHANNEL_BASE                 20
 #define MSG_TYPE_AUTHENTICATOR_SESSION_INFO     (NEGOTIATOR_CHANNEL_BASE + 1)
@@ -53,6 +54,7 @@ typedef uint8_t msg_type_t;
 #define UPDATE_STATE_LENGTH_EXCEEDED        3
 #define UPDATE_STATE_CONFLICT               4
 #define UPDATE_STATE_FAILED                 5
+#define UPDATE_STATE_FORBIDDEN              6
 
 #define UPDATE_REASON_UNKNOWN                   0x00
 #define UPDATE_REASON_LOCAL_OR_MCU_UPDATE       0x01 // local or unsolicited UPDATE from MCU
@@ -63,7 +65,12 @@ typedef uint8_t msg_type_t;
 #define UPDATE_REASON_FAKE_UPDATE               0x06 // fake update launched
 #define UPDATE_REASON_NOTIFY_MCU_WE_REBOOTED    0x07 // notify MCU we rebooted. Never goes to Service
 #define UPDATE_REASON_LOCAL_SET                 0x08 // response to Local SET
-#define UPDATE_REASON_INTERNAL_LAST_VALID       UPDATE_REASON_LOCAL_SET // always last valid #define
+#define UPDATE_REASON_REBOOTED                  0x09
+#define UPDATE_REASON_CRC_FAIL                  0x0A // CRC failure
+#define UPDATE_REASON_GET_RESPONSE              0x0B  // response to GET
+#define UPDATE_REASON_LAST_VALID                UPDATE_REASON_GET_RESPONSE // always last
+
+#define UPDATE_REASON_INTERNAL_SET_REJECTED     0xfd // Set failed and we should revert to the current value
 #define UPDATE_REASON_INTERNAL_SET_FAIL         0xfe // Set failed
 #define UPDATE_REASON_INTERNAL_NO_CHANGE        0xff // do not change current value (not to be sent to Service)
 

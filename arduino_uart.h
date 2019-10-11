@@ -20,15 +20,13 @@
 #include "af_transport.h"
 
 // You shouldn't call this directly but instead use the arduino_transport_create_uart call
-af_transport_t* arduino_uart_create(uint8_t rxPin, uint8_t txPin);
+af_transport_t* arduino_uart_create(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate);
 
 void af_transport_check_for_interrupt_uart(af_transport_t *af_transport, volatile int *interrupts_pending, bool idle);
 int af_transport_exchange_status_uart(af_transport_t *af_transport, af_status_command_t *af_status_command_tx, af_status_command_t *af_status_command_rx);
 int af_transport_write_status_uart(af_transport_t *af_transport, af_status_command_t *af_status_command);
-void af_transport_send_bytes_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
-void af_transport_recv_bytes_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
 void af_transport_send_bytes_offset_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t *bytes_to_send, uint16_t *offset);
-void af_transport_recv_bytes_offset_uart(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset);
+int af_transport_recv_bytes_offset_uart(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset);
 
 void arduino_uart_destroy(af_transport_t *af_transport);
 

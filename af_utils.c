@@ -16,22 +16,6 @@
 
 #include "af_utils.h"
 
-#ifndef ARDUINO
-#include <sys/time.h>
-static struct timeval start;
-#else
-#include "Arduino.h"
-#endif
-
-long af_utils_millis() {
-#ifndef ARDUINO
-    gettimeofday(&start, NULL);
-    return (start.tv_sec) * 1000 + (start.tv_usec) / 1000 ;
-#else
-    return millis();
-#endif
-}
-
 void af_utils_write_little_endian_16(uint16_t n, uint8_t* d) {
     d[0] = (uint8_t)n;
     d[1] = (uint8_t)(n >> 8);

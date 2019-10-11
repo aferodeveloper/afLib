@@ -1,0 +1,32 @@
+{
+	"name": "attribute_dumper_Modulo-1B_SPI",
+	"description": "ASR-1 Profile to do... well, nothing but provide attributes for an MCU app to read.",
+	"createdTimestamp": 1559232301353,
+	"updatedTimestamp": 1559232301353,
+	"deviceTypeId": "",
+	"partnerId": "",
+	"disconnectNotificationLevel": "LOW",
+	"virtual": false,
+	"deviceTags": [],
+	"moduleConfiguration": {
+		"id": "63809818-9d41-4d01-beff-88f9ea3cee3d",
+		"name": "Modulo-1B",
+		"module": {
+			"id": "1714dc70-8e28-4f6d-81aa-3c4a8d6d186b",
+			"name": "ASR-1B",
+			"createdTimestampMs": 1537572550868,
+			"updatedTimestampMs": 1537572550868
+		},
+		"minimumFirmwareVersions": {
+			"2001": "0",
+			"2002": "0",
+			"2003": "0",
+			"2004": "0",
+			"2005": "0",
+			"2006": "0"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1537572808349,
+		"updatedTimestampMs": 1537572808349
+	}
+}

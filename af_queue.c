@@ -10,6 +10,10 @@
 #include "af_queue.h"
 #include "af_logger.h"
 
+#ifndef __GNUC__
+#define __builtin_offsetof(st, m) ((size_t)&(((st *)0)->m))
+#endif
+
 static uint8_t (*m_p_preemption_disable)(void);
 static void (*m_p_preemption_enable)(uint8_t is_nested);
 
@@ -46,6 +50,7 @@ static af_queue_elem_desc_t *__af_queue_elem_alloc(queue_t *p_q)
         p_desc = p_q->p_free_head;
         p_q->p_free_head = p_desc->p_next_free;
         p_desc->p_next_alloc = NULL;
+        p_q->num_available--;
     }
 
     return p_desc;
@@ -116,6 +121,7 @@ static void __af_queue_elem_free(queue_t *p_q, void *p_data)
     p_tmp_desc = p_q->p_free_head;
     p_q->p_free_head = p_desc;
     p_desc->p_next_free = p_tmp_desc;
+    p_q->num_available++;
 }
 
 static void _af_queue_elem_free(queue_t *p_q, void *p_data, bool interrupt_context)
@@ -217,6 +223,7 @@ void af_queue_init(queue_t *p_q, int elem_size, int max_elem, uint8_t *p_mem)
 
     // string all elements together and onto the null-terminated free list to start
     p_q->p_free_head = (af_queue_elem_desc_t *)p_mem;
+    p_q->num_available = max_elem;
 
     for (i = 0; i < max_elem - 1; ++i) {
         offset = i * (ALIGN_SIZE(sizeof(af_queue_elem_desc_t), 4) + ALIGN_SIZE(elem_size, 4));
@@ -238,7 +245,7 @@ void af_queue_init_system(uint8_t (*p_preemption_disable)(void), void (*p_preemp
     m_p_preemption_enable = p_preemption_enable;
 }
 
-void af_queue_dump(queue_t *p_q)
+void af_queue_dump(queue_t *p_q, void (*p_element_data)(void*))
 {
     af_queue_elem_desc_t *p_elem;
 
@@ -254,7 +261,9 @@ void af_queue_dump(queue_t *p_q)
     af_logger_println_buffer("In Queue: "); // Not all allocated are in queue (until af_queue_put)
     p_elem = p_q->p_head;
     while (p_elem) {
-        af_logger_println_formatted_value((int)p_elem, AF_LOGGER_HEX);
+        af_logger_print_formatted_value((int)p_elem, AF_LOGGER_HEX);
+        af_logger_print_buffer(" ");
+        p_element_data(p_elem->data);
         p_elem = p_elem->p_next_alloc;
     }
 
@@ -264,4 +273,8 @@ void af_queue_dump(queue_t *p_q)
         af_logger_println_formatted_value((int)p_elem, AF_LOGGER_HEX);
         p_elem = p_elem->p_next_free;
     }
+}
+
+uint32_t af_queue_get_num_available(queue_t *p_q) {
+    return p_q->num_available;
 }

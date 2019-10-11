@@ -1,0 +1,114 @@
+{
+	"active": true,
+	"valid": true,
+	"friendlyName": "Default Presentation",
+	"createdTimestamp": 1531774502306,
+	"deviceProfileId": "e83cb85e-a44e-4285-bd36-eaed46028893",
+	"presentationId": "15e2b718-8639-4f1e-b8c4-da233d9a77bf",
+	"presentationDefinition": {
+		"label": "mcu_update_all_Modulo-1B_UART",
+		"attributeOptions": {
+			"1": {
+				"flags": [],
+				"label": "Current Temperature",
+				"rangeOptions": {
+					"minValue": "0",
+					"maxValue": "400",
+					"stepValue": "1",
+					"unitLabel": "°"
+				}
+			},
+			"2": {
+				"flags": [],
+				"label": "Temp Sensor",
+				"rangeOptions": {
+					"minValue": "0",
+					"maxValue": "400",
+					"stepValue": "25",
+					"unitLabel": "°"
+				}
+			},
+			"3": {
+				"flags": [],
+				"label": "Sample Rate"
+			}
+		},
+		"gauge": {
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_temperature.png"
+					}
+				]
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
+		},
+		"groups": [
+			{
+				"controls": [
+					1,
+					2
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_unknown.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "Temp Sensor",
+				"id": 1
+			}
+		],
+		"controls": [
+			{
+				"attributeMap": {
+					"temperature": 2,
+					"currentTemperature": 1
+				},
+				"controlType": "climateControl",
+				"id": 1,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 3
+				},
+				"controlType": "stringControl",
+				"id": 2,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			}
+		],
+		"layout": null
+	}
+}

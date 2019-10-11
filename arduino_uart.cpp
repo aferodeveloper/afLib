@@ -18,7 +18,6 @@
 #include <SPI.h>
 #include "arduino_uart.h"
 #include "af_lib.h"
-#include "af_errors.h"
 #include "af_logger.h"
 #include "af_msg_types.h"
 #include "af_utils.h"
@@ -28,22 +27,22 @@
 
 class ArduinoUART {
 public:
-    ArduinoUART(uint8_t rxPin, uint8_t txPin);
+    ArduinoUART(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate);
 
     void checkForInterrupt(volatile int *interrupts_pending, bool idle);
     int exchangeStatus(af_status_command_t *tx, af_status_command_t *rx);
     int writeStatus(af_status_command_t *c);
     void sendBytes(uint8_t *bytes, int len);
-    void recvBytes(uint8_t *bytes, int len);
+    int recvBytes(uint8_t *bytes, int len);
     void sendBytesOffset(uint8_t *bytes, uint16_t *bytesToSend, uint16_t *offset);
-    void recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t *bytesToRecv, uint16_t *offset);
+    int recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t *bytesToRecv, uint16_t *offset);
 
 private:
     SoftwareSerial *_uart;
 
     int available();
     char peek();
-    void read(uint8_t *buffer, int len);
+    int read(uint8_t *buffer, int len);
     char read();
     void write(uint8_t *buffer, int len);
 };
@@ -52,9 +51,9 @@ struct af_transport_t {
     ArduinoUART *arduinoUART;
 };
 
-af_transport_t* arduino_uart_create(uint8_t rxPin, uint8_t txPin) {
+af_transport_t* arduino_uart_create(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate) {
     af_transport_t* result = new af_transport_t();
-    result->arduinoUART = new ArduinoUART(rxPin, txPin);
+    result->arduinoUART = new ArduinoUART(rxPin, txPin, baud_rate);
     return result;
 }
 
@@ -75,29 +74,21 @@ int af_transport_write_status_uart(af_transport_t *af_transport, af_status_comma
     return af_transport->arduinoUART->writeStatus(af_status_command);
 }
 
-void af_transport_send_bytes_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    af_transport->arduinoUART->sendBytes(bytes, len);
-}
-
-void af_transport_recv_bytes_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    af_transport->arduinoUART->recvBytes(bytes, len);
-}
-
 void af_transport_send_bytes_offset_uart(af_transport_t *af_transport, uint8_t *bytes, uint16_t *bytes_to_send, uint16_t *offset) {
     af_transport->arduinoUART->sendBytesOffset(bytes, bytes_to_send, offset);
 }
 
-void af_transport_recv_bytes_offset_uart(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset) {
-    af_transport->arduinoUART->recvBytesOffset(bytes, bytes_len, bytes_to_recv, offset);
+int af_transport_recv_bytes_offset_uart(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset) {
+    return af_transport->arduinoUART->recvBytesOffset(bytes, bytes_len, bytes_to_recv, offset);
 }
 
-ArduinoUART::ArduinoUART(uint8_t rxPin, uint8_t txPin)
+ArduinoUART::ArduinoUART(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate)
 {
     pinMode(rxPin, INPUT);
     pinMode(txPin, OUTPUT);
 
     _uart = new SoftwareSerial(rxPin, txPin);
-    _uart->begin(9600);
+    _uart->begin(baud_rate);
 }
 
 int ArduinoUART::available()
@@ -115,7 +106,7 @@ char ArduinoUART::read()
     return _uart->read();
 }
 
-void ArduinoUART::read(uint8_t *buffer, int len)
+int ArduinoUART::read(uint8_t *buffer, int len)
 {
     memset(buffer, 0, len);
     for (int i = 0; i < len; i++) {
@@ -123,12 +114,13 @@ void ArduinoUART::read(uint8_t *buffer, int len)
         unsigned long time = af_utils_millis();
         while (((b = _uart->read()) == -1)) {
             if (af_utils_millis() - time > MAX_WAIT_TIME) {
-                return;
+                return -1;
             }
         }
         buffer[i] = (uint8_t )b;
         //af_logger_print_buffer("<"); af_logger_println_formatted_value(buffer[i], AF_LOGGER_HEX);
     }
+    return len;
 }
 
 void ArduinoUART::write(uint8_t *buffer, int len)
@@ -176,13 +168,22 @@ int ArduinoUART::exchangeStatus(af_status_command_t *tx, af_status_command_t *rx
     sendBytes(rbytes, len + 1);
 
     // Skip any interrupts that may have come in.
-    recvBytes(rbytes, 1);
+    int read_result = recvBytes(rbytes, 1);
+    if (read_result < 0) {
+        return AF_ERROR_TIMEOUT;
+    }
     while (rbytes[0] == INT_CHAR) {
-        recvBytes(rbytes, 1);
+        read_result = recvBytes(rbytes, 1);
+        if (read_result < 0) {
+            return AF_ERROR_TIMEOUT;
+        }
     }
 
     // Okay, we have a good first char, now read the rest.
-    recvBytes(&rbytes[1], len);
+    read_result = recvBytes(&rbytes[1], len);
+    if (read_result < 0) {
+        return AF_ERROR_TIMEOUT;
+    }
 
     uint8_t cmd = bytes[index++];
     if (cmd != SYNC_REQUEST && cmd != SYNC_ACK) {
@@ -231,8 +232,8 @@ void ArduinoUART::sendBytes(uint8_t *bytes, int len) {
     write(bytes, len);
 }
 
-void ArduinoUART::recvBytes(uint8_t *bytes, int len) {
-    read(bytes, len);
+int ArduinoUART::recvBytes(uint8_t *bytes, int len) {
+    return read(bytes, len);
 }
 
 void ArduinoUART::sendBytesOffset(uint8_t *bytes, uint16_t *bytesToSend, uint16_t *offset)
@@ -249,7 +250,7 @@ void ArduinoUART::sendBytesOffset(uint8_t *bytes, uint16_t *bytesToSend, uint16_
     *bytesToSend -= len;
 }
 
-void ArduinoUART::recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t *bytesToRecv, uint16_t *offset)
+int ArduinoUART::recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t *bytesToRecv, uint16_t *offset)
 {
     uint16_t len = 0;
 
@@ -257,15 +258,20 @@ void ArduinoUART::recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t 
 
     if (*offset == 0) {
         *bytesLen = *bytesToRecv;
-        *bytes = new uint8_t[*bytesLen];
+        *bytes = (uint8_t*)malloc(*bytesLen);
     }
 
     uint8_t * start = *bytes + *offset;
 
-    recvBytes(start, len);
+    int read_result = recvBytes(start, len);
+    if (read_result < 0) {
+        return AF_ERROR_TIMEOUT;
+    }
 
 //  dumpBytes("Receiving:", len, _readBuffer);
 
     *offset += len;
     *bytesToRecv -= len;
+
+    return AF_SUCCESS;
 }

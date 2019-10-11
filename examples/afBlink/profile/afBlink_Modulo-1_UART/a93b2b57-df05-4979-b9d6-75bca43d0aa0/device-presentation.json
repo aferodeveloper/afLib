@@ -1,0 +1,131 @@
+{
+	"active": true,
+	"valid": true,
+	"friendlyName": "Default Presentation",
+	"createdTimestamp": 1546463513857,
+	"deviceProfileId": "c4675be9-2cf5-4521-98be-4395594807f5",
+	"presentationId": "4c48d4e7-1de2-4fe4-b6a2-e67c2ffe029a",
+	"presentationDefinition": {
+		"label": "afBlink Modulo-1 UART",
+		"attributeOptions": {
+			"1": {
+				"flags": [
+					"primaryOperation"
+				],
+				"label": "Blink",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "Stop",
+							"state": "standby"
+						},
+						"match": "false"
+					},
+					{
+						"apply": {
+							"label": "Start",
+							"state": "running"
+						},
+						"match": "true"
+					}
+				]
+			},
+			"1024": {
+				"flags": [],
+				"label": "LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "ON",
+							"state": "running"
+						},
+						"match": "1"
+					},
+					{
+						"apply": {
+							"label": "OFF",
+							"state": "standby"
+						},
+						"match": "0"
+					}
+				]
+			}
+		},
+		"gauge": {
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_light.png"
+					}
+				]
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
+		},
+		"groups": [
+			{
+				"controls": [
+					1,
+					2
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_light.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "Blink",
+				"id": 1449612955889
+			}
+		],
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1
+				},
+				"controlType": "menuControl",
+				"id": 1,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"id": 2,
+				"controlType": "stringControl",
+				"attributeMap": {
+					"value": 1024
+				},
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			}
+		],
+		"layout": null
+	}
+}

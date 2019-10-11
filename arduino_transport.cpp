@@ -27,12 +27,18 @@ static arduino_transport_t s_transport_type;
 
 af_transport_t* arduino_transport_create_spi(int chipSelect) {
     s_transport_type = ARDUINO_TRANSPORT_SPI;
-    return arduino_spi_create(chipSelect);
+    return arduino_spi_create(chipSelect, DEFAULT_SPI_FRAME_LEN);
 }
 
-af_transport_t* arduino_transport_create_uart(uint8_t rxPin, uint8_t txPin) {
+
+af_transport_t* arduino_transport_create_spi(int chipSelect, uint16_t frame_length) {
+    s_transport_type = ARDUINO_TRANSPORT_SPI;
+    return arduino_spi_create(chipSelect, frame_length);
+}
+
+af_transport_t* arduino_transport_create_uart(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate) {
     s_transport_type = ARDUINO_TRANSPORT_UART;
-    return arduino_uart_create(rxPin, txPin);
+    return arduino_uart_create(rxPin, txPin, baud_rate);
 }
 
 void arduino_transport_destroy(af_transport_t *af_transport) {
@@ -67,22 +73,6 @@ int af_transport_write_status(af_transport_t *af_transport, af_status_command_t 
     }
 }
 
-void af_transport_send_bytes(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    if (ARDUINO_TRANSPORT_SPI == s_transport_type) {
-        af_transport_send_bytes_spi(af_transport, bytes, len);
-    } else {
-        af_transport_send_bytes_uart(af_transport, bytes, len);
-    }
-}
-
-void af_transport_recv_bytes(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    if (ARDUINO_TRANSPORT_SPI == s_transport_type) {
-        af_transport_recv_bytes_spi(af_transport, bytes, len);
-    } else {
-        af_transport_recv_bytes_uart(af_transport, bytes, len);
-    }
-}
-
 void af_transport_send_bytes_offset(af_transport_t *af_transport, uint8_t *bytes, uint16_t *bytes_to_send, uint16_t *offset) {
     if (ARDUINO_TRANSPORT_SPI == s_transport_type) {
         af_transport_send_bytes_offset_spi(af_transport, bytes, bytes_to_send, offset);
@@ -91,10 +81,11 @@ void af_transport_send_bytes_offset(af_transport_t *af_transport, uint8_t *bytes
     }
 }
 
-void af_transport_recv_bytes_offset(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset) {
+int af_transport_recv_bytes_offset(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset) {
     if (ARDUINO_TRANSPORT_SPI == s_transport_type) {
         af_transport_recv_bytes_offset_spi(af_transport, bytes, bytes_len, bytes_to_recv, offset);
     } else {
-        af_transport_recv_bytes_offset_uart(af_transport, bytes, bytes_len, bytes_to_recv, offset);
+        return af_transport_recv_bytes_offset_uart(af_transport, bytes, bytes_len, bytes_to_recv, offset);
     }
+    return AF_SUCCESS;
 }

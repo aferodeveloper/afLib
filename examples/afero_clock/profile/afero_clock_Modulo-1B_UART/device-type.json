@@ -1,0 +1,32 @@
+{
+	"name": "afero_clock_Modulo-1B_UART",
+	"description": "This profile is used the in afero_clock Arduino example application. The example application only reads system attributes, so no user attributes are defined here other than enabling MCU support and enabling ASR_UTC_TIME in the MCU Configuration.",
+	"createdTimestamp": 1559231930361,
+	"updatedTimestamp": 1559231930361,
+	"deviceTypeId": "",
+	"partnerId": "",
+	"disconnectNotificationLevel": "LOW",
+	"virtual": false,
+	"deviceTags": [],
+	"moduleConfiguration": {
+		"id": "63809818-9d41-4d01-beff-88f9ea3cee3d",
+		"name": "Modulo-1B",
+		"module": {
+			"id": "1714dc70-8e28-4f6d-81aa-3c4a8d6d186b",
+			"name": "ASR-1B",
+			"createdTimestampMs": 1537572550868,
+			"updatedTimestampMs": 1537572550868
+		},
+		"minimumFirmwareVersions": {
+			"2001": "0",
+			"2002": "0",
+			"2003": "0",
+			"2004": "0",
+			"2005": "0",
+			"2006": "0"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1537572808349,
+		"updatedTimestampMs": 1537572808349
+	}
+}

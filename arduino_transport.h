@@ -19,8 +19,11 @@
 
 #include "af_transport.h"
 
+#define DEFAULT_SPI_FRAME_LEN                       ((uint16_t)16)
+
 af_transport_t* arduino_transport_create_spi(int chipSelect);
-af_transport_t* arduino_transport_create_uart(uint8_t rxPin, uint8_t txPin);
+af_transport_t* arduino_transport_create_spi(int chipSelect, uint16_t frame_length);
+af_transport_t* arduino_transport_create_uart(uint8_t rxPin, uint8_t txPin, uint32_t baud_rate);
 
 void arduino_transport_destroy(af_transport_t *af_transport);
 

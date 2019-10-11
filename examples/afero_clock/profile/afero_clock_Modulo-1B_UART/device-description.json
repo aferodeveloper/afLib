@@ -1,0 +1,256 @@
+{
+	"schemaVersion": 2,
+	"deviceDescriptionId": "",
+	"partnerId": "",
+	"createdTimestamp": 1563290722440,
+	"services": [
+		{
+			"id": 1,
+			"attributes": [
+				{
+					"id": 1024,
+					"semanticType": "LED",
+					"dataType": "SINT16",
+					"length": 2,
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"value": "0"
+				},
+				{
+					"id": 1025,
+					"semanticType": "GPIO 0 Configuration",
+					"dataType": "SINT64",
+					"length": 8,
+					"operations": [
+						"READ"
+					],
+					"value": "0"
+				},
+				{
+					"id": 1030,
+					"semanticType": "Button",
+					"dataType": "SINT16",
+					"length": 2,
+					"operations": [
+						"READ"
+					],
+					"value": null
+				},
+				{
+					"id": 1031,
+					"semanticType": "GPIO 3 Configuration",
+					"dataType": "SINT64",
+					"length": 8,
+					"operations": [
+						"READ"
+					],
+					"value": "325"
+				},
+				{
+					"id": 1201,
+					"semanticType": "UTC Time",
+					"dataType": "SINT32",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 4
+				},
+				{
+					"id": 2001,
+					"semanticType": "Bootloader Version",
+					"dataType": "SINT64",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 8
+				},
+				{
+					"id": 2002,
+					"semanticType": "Softdevice Version",
+					"dataType": "SINT64",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 8
+				},
+				{
+					"id": 2003,
+					"semanticType": "Application Version",
+					"dataType": "SINT64",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 8
+				},
+				{
+					"id": 2004,
+					"semanticType": "Profile Version",
+					"dataType": "SINT64",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 8
+				},
+				{
+					"id": 59001,
+					"semanticType": "Offline Schedules Enabled",
+					"dataType": "SINT16",
+					"operations": [
+						"READ",
+						"WRITE",
+						"STORE_IN_FLASH"
+					],
+					"value": "0",
+					"length": 2
+				},
+				{
+					"id": 65000,
+					"semanticType": "MCU UART Config",
+					"dataType": "BYTES",
+					"operations": [
+						"READ"
+					],
+					"value": "01030000",
+					"length": 4
+				},
+				{
+					"id": 65001,
+					"dataType": "BYTES",
+					"semanticType": "UTC Offset Data",
+					"operations": [
+						"READ",
+						"WRITE"
+					],
+					"value": null,
+					"length": 8
+				},
+				{
+					"id": 65002,
+					"dataType": "SINT32",
+					"semanticType": "Maximum Re-link Interval",
+					"operations": [
+						"READ",
+						"WRITE",
+						"MCU"
+					],
+					"value": "604800",
+					"length": 4
+				},
+				{
+					"id": 65003,
+					"dataType": "SINT32",
+					"semanticType": "Attributes CRC32",
+					"operations": [
+						"WRITE",
+						"MCU"
+					],
+					"value": null,
+					"length": 4
+				},
+				{
+					"id": 65012,
+					"semanticType": "Command",
+					"dataType": "BYTES",
+					"operations": [
+						"READ",
+						"WRITE",
+						"PASS_THROUGH",
+						"MCU"
+					],
+					"value": null,
+					"length": 64
+				},
+				{
+					"id": 65013,
+					"semanticType": "ASR State",
+					"dataType": "SINT8",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 1
+				},
+				{
+					"id": 65014,
+					"semanticType": "Low Power Warn",
+					"dataType": "SINT8",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 1
+				},
+				{
+					"id": 65015,
+					"semanticType": "Linked Timestamp",
+					"dataType": "SINT32",
+					"operations": [
+						"WRITE"
+					],
+					"value": null,
+					"length": 4
+				},
+				{
+					"id": 65018,
+					"semanticType": "Attribute ACK",
+					"dataType": "SINT16",
+					"operations": [
+						"WRITE",
+						"MCU"
+					],
+					"value": null,
+					"length": 2
+				},
+				{
+					"id": 65019,
+					"semanticType": "Reboot Reason",
+					"dataType": "UTF8S",
+					"operations": [
+						"READ"
+					],
+					"value": null,
+					"length": 100
+				},
+				{
+					"id": 65020,
+					"semanticType": "BLE Comms",
+					"dataType": "BYTES",
+					"operations": [
+						"READ",
+						"MCU"
+					],
+					"value": "FA000000180018000C00A00F",
+					"length": 12
+				},
+				{
+					"id": 65021,
+					"semanticType": "MCU Interface",
+					"dataType": "SINT8",
+					"operations": [
+						"READ",
+						"MCU"
+					],
+					"value": "2",
+					"length": 1
+				},
+				{
+					"id": 65066,
+					"semanticType": "Device Capability",
+					"dataType": "BYTES",
+					"operations": [
+						"READ"
+					],
+					"value": "0000000000000000",
+					"length": 8
+				}
+			]
+		}
+	]
+}

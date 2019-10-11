@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+// The maximum time any transfer operation should take.  If this time elapses then the function should return a AF_ERROR_TIMEOUT result
+#define MAX_TRANSFER_TIME_MS                10000
+
 typedef struct af_transport_t af_transport_t; // A specific implementation can fill in what's appropriate for it in their c file
 
 /*
@@ -46,20 +49,6 @@ int af_transport_exchange_status(af_transport_t *af_transport, af_status_command
  * Write the specified status message to the interface.
  */
 int af_transport_write_status(af_transport_t *af_transport, af_status_command_t *af_status_command);
-
-/*
- * sendBytes
- *
- * Write the specified bytes to the interface.
- */
-void af_transport_send_bytes(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
-
-/*
- * recvBytes
- *
- * Read the specified bytes from the interface.
- */
-void af_transport_recv_bytes(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
 
 /*
  * sendBytesOffset
@@ -88,8 +77,11 @@ void af_transport_send_bytes_offset(af_transport_t *af_transport, uint8_t *bytes
  *                      This value is decremented after each packet is read and will be 0 when all bytes have been read.
  * @param offset        Pointer to offset into bytes buffer.
  *                      This value is incremented after each packet is read and will equal bytesToRecv when all bytes have been read.
+ *
+ * @return AF_SUCCESS       - bytes received successfully
+ * @return AF_ERROR_TIMEOUT - receiving the bytes took too long, this will effectively make afLib reject the current transfer and go back to the idle state
  */
-void af_transport_recv_bytes_offset(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset);
+int af_transport_recv_bytes_offset(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset);
 
 #ifdef __cplusplus
 } /* end of extern "C" */

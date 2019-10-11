@@ -31,7 +31,7 @@ typedef struct {
     uint8_t     cmd;
     uint8_t     request_id;
     uint16_t    attr_id;
-    uint8_t     status;
+    uint8_t     state;
     uint8_t     reason;
     uint16_t    value_len;
     uint8_t     *value;
@@ -63,6 +63,8 @@ uint16_t af_command_get_size(af_command_t *af_command);
 uint16_t af_command_get_bytes(af_command_t *af_command, uint8_t *bytes);
 
 uint8_t af_command_get_reason(af_command_t *af_command);
+
+uint8_t af_command_get_state(af_command_t *af_command);
 
 bool af_command_is_valid(af_command_t *af_command);
 

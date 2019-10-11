@@ -2,37 +2,37 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-af_lib_t							KEYWORD1
-attr_set_handler_t					KEYWORD1
-attr_notify_handler_t				KEYWORD1
+af_lib_t	KEYWORD1
+attr_set_handler_t	KEYWORD1
+attr_notify_handler_t	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-af_lib_create						KEYWORD2
-af_lib_destroy						KEYWORD2
-af_lib_loop							KEYWORD2
-af_lib_get_attribute				KEYWORD2
-af_lib_set_attribute_bool			KEYWORD2
-af_lib_set_attribute_8				KEYWORD2
-af_lib_set_attribute_16				KEYWORD2
-af_lib_set_attribute_32				KEYWORD2
-af_lib_set_attribute_64				KEYWORD2
-af_lib_set_attribute_str			KEYWORD2
-af_lib_set_attribute_bytes			KEYWORD2
-af_lib_is_idle						KEYWORD2
-af_lib_mcu_isr						KEYWORD2
+af_lib_create	KEYWORD2
+af_lib_destroy	KEYWORD2
+af_lib_loop	KEYWORD2
+af_lib_get_attribute	KEYWORD2
+af_lib_set_attribute_bool	KEYWORD2
+af_lib_set_attribute_8	KEYWORD2
+af_lib_set_attribute_16	KEYWORD2
+af_lib_set_attribute_32	KEYWORD2
+af_lib_set_attribute_64	KEYWORD2
+af_lib_set_attribute_str	KEYWORD2
+af_lib_set_attribute_bytes	KEYWORD2
+af_lib_is_idle	KEYWORD2
+af_lib_mcu_isr	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
 
-AF_SUCCESS							LITERAL1
-AF_ERROR_NO_SUCH_ATTRIBUTE			LITERAL1
-AF_ERROR_BUSY						LITERAL1
-AF_ERROR_INVALID_COMMAND			LITERAL1
-AF_ERROR_QUEUE_OVERFLOW				LITERAL1
-AF_ERROR_QUEUE_UNDERFLOW			LITERAL1
-AF_ERROR_INVALID_PARAM 				LITERAL1
+AF_SUCCESS	LITERAL1
+AF_ERROR_NO_SUCH_ATTRIBUTE	LITERAL1
+AF_ERROR_BUSY	LITERAL1
+AF_ERROR_INVALID_COMMAND	LITERAL1
+AF_ERROR_QUEUE_OVERFLOW	LITERAL1
+AF_ERROR_QUEUE_UNDERFLOW	LITERAL1
+AF_ERROR_INVALID_PARAM 	LITERAL1
 

@@ -21,11 +21,14 @@
 extern "C" {
 #endif
 
+// The MCU should now look for AF_MODULE_STATE_REBOOTED or AF_MODULE_STATE_LINKED to indicate that the ASR has rebooted, and AF_MODULE_STATE_RELINKED to mean relinked
 typedef enum {
     AF_MODULE_STATE_REBOOTED,
-    AF_MODULE_STATE_LINKED,
+    AF_MODULE_STATE_LINKED, // means rebooted & linked, which will only happen after the first link after a reboot
     AF_MODULE_STATE_UPDATING,
-    AF_MODULE_STATE_UPDATE_READY
+    AF_MODULE_STATE_UPDATE_READY,
+    AF_MODULE_STATE_INITIALIZED,
+    AF_MODULE_STATE_RELINKED, // means subsequent relinks
 } af_module_states_t;
 
 #ifdef __cplusplus

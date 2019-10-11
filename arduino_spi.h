@@ -20,16 +20,26 @@
 #include "af_lib.h"
 #include "af_transport.h"
 
-// You shouldn't call this directly but instead use the arduino_transport_create_spi call
-af_transport_t* arduino_spi_create(int chipSelect);
+#include <af_msg_types.h>
 
-void arduino_spi_setup_interrupts(af_lib_t* af_lib, int mcuInterrupt);
+
+// You shouldn't call this directly but instead use the arduino_transport_create_spi call
+af_transport_t* arduino_spi_create(int chipSelect, uint16_t frame_length);
+
+/**
+ * Setup the SPI interrupt handling with your instance of afLib
+ *
+ * @param af_lib        - an instance of afLib
+ * @param mcuInterrupt  - the interrupt pin
+ *
+ * @return AF_SUCCESS               - SPI interrupts setup successfully
+ * @return AF_ERROR_INVALID_PARAM   - the instance of afLib is NULL
+ */
+af_lib_error_t arduino_spi_setup_interrupts(af_lib_t* af_lib, int mcuInterrupt);
 
 void af_transport_check_for_interrupt_spi(af_transport_t *af_transport, volatile int *interrupts_pending, bool idle);
 int af_transport_exchange_status_spi(af_transport_t *af_transport, af_status_command_t *af_status_command_tx, af_status_command_t *af_status_command_rx);
 int af_transport_write_status_spi(af_transport_t *af_transport, af_status_command_t *af_status_command);
-void af_transport_send_bytes_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
-void af_transport_recv_bytes_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t len);
 void af_transport_send_bytes_offset_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t *bytes_to_send, uint16_t *offset);
 void af_transport_recv_bytes_offset_spi(af_transport_t *af_transport, uint8_t **bytes, uint16_t *bytes_len, uint16_t *bytes_to_recv, uint16_t *offset);
 

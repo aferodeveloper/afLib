@@ -1,0 +1,32 @@
+{
+	"name": "afBlink Modulo-2 UART",
+	"description": "This profile is used with the afBlink example applicatrion in the afLib library to demonstrate using an MCU with a Modulo-2 development board.",
+	"createdTimestamp": 1559231162469,
+	"updatedTimestamp": 1559231162469,
+	"deviceTypeId": "",
+	"partnerId": "",
+	"disconnectNotificationLevel": "LOW",
+	"virtual": false,
+	"deviceTags": [],
+	"moduleConfiguration": {
+		"id": "c7168904-abd3-4dc4-975c-038a03457b0c",
+		"name": "Modulo-2",
+		"module": {
+			"id": "621b666f-ff31-4167-be3b-694123e7c408",
+			"name": "ASR-2",
+			"createdTimestampMs": 1497546309908,
+			"updatedTimestampMs": 1497546309908
+		},
+		"minimumFirmwareVersions": {
+			"2001": "0",
+			"2002": "0",
+			"2003": "27144",
+			"2004": "0",
+			"2005": "0",
+			"2006": "0"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1497547254457,
+		"updatedTimestampMs": 1497547254457
+	}
+}

@@ -1,0 +1,351 @@
+{
+	"active": true,
+	"valid": true,
+	"friendlyName": "Default Presentation",
+	"createdTimestamp": 1512687184218,
+	"deviceProfileId": "34ea9c60-8a57-4fc1-9a42-de3337c881cd",
+	"presentationId": "505f4adb-5e39-4d4f-960e-7d73b040597a",
+	"presentationDefinition": {
+		"label": "attribute_dumper_Modulo-1_UART",
+		"attributeOptions": {
+			"1": {
+				"flags": [],
+				"label": "SINT8"
+			},
+			"2": {
+				"flags": [],
+				"label": "SINT16"
+			},
+			"3": {
+				"flags": [],
+				"label": "SINT32"
+			},
+			"4": {
+				"flags": [],
+				"label": "SINT64"
+			},
+			"5": {
+				"flags": [],
+				"label": "FIXED_15_16"
+			},
+			"6": {
+				"flags": [],
+				"label": "BOOLEAN"
+			},
+			"7": {
+				"flags": [],
+				"label": "UTF8S"
+			},
+			"8": {
+				"flags": [],
+				"label": "BYTES"
+			},
+			"1024": {
+				"flags": [
+					"primaryOperation"
+				],
+				"label": "LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "on",
+							"state": "running"
+						},
+						"match": "1"
+					},
+					{
+						"apply": {
+							"label": "off",
+							"state": "standby"
+						},
+						"match": "0"
+					}
+				]
+			},
+			"1026": {
+				"flags": [],
+				"label": "IO1"
+			},
+			"1028": {
+				"flags": [],
+				"label": "IO2"
+			},
+			"1030": {
+				"flags": [],
+				"label": "BUTTON",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "toggled on",
+							"state": "standby"
+						},
+						"match": "1"
+					},
+					{
+						"apply": {
+							"label": "toggled off",
+							"state": "standby"
+						},
+						"match": "0"
+					}
+				]
+			}
+		},
+		"gauge": {
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_unknown.png"
+					}
+				]
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
+		},
+		"groups": [
+			{
+				"controls": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_unknown.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "Attributes",
+				"id": 1501702774343
+			}
+		],
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1
+				},
+				"controlType": "stringControl",
+				"id": 1,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 2
+				},
+				"controlType": "stringControl",
+				"id": 2,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 3
+				},
+				"controlType": "stringControl",
+				"id": 3,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 4
+				},
+				"controlType": "stringControl",
+				"id": 4,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 5
+				},
+				"controlType": "stringControl",
+				"id": 5,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 6
+				},
+				"controlType": "stringControl",
+				"id": 6,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 7
+				},
+				"controlType": "stringControl",
+				"id": 7,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 8
+				},
+				"controlType": "stringControl",
+				"id": 8,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1024
+				},
+				"controlType": "switch",
+				"id": 9,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1026
+				},
+				"controlType": "stringControl",
+				"id": 10,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1028
+				},
+				"controlType": "stringControl",
+				"id": 11,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1030
+				},
+				"controlType": "stringControl",
+				"id": 12,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			}
+		],
+		"layout": null
+	}
+}

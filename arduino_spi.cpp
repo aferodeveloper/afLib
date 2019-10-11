@@ -15,18 +15,15 @@
  */
 
 #include "arduino_spi.h"
-#include "af_errors.h"
 #include "af_logger.h"
 #include "af_lib.h"
 
 #include <SPI.h>
 
-#define SPI_FRAME_LEN                       ((uint16_t)16)
-
 class ArduinoSPI {
 public:
 
-    ArduinoSPI(int chipSelect);
+    ArduinoSPI(int chipSelect, uint16_t frame_length);
 
     void checkForInterrupt(volatile int *interrupts_pending, bool idle);
     int exchangeStatus(af_status_command_t *tx, af_status_command_t *rx);
@@ -39,11 +36,12 @@ public:
 private:
     SPISettings _spiSettings;
     int _chipSelect;
+    uint16_t _frameLength;
 
-    virtual void begin();
-    virtual void beginSPI(); /* settings are in this class */
-    virtual void endSPI();
-    virtual void transfer(uint8_t *bytes, int len);
+    void begin();
+    void beginSPI(); /* settings are in this class */
+    void endSPI();
+    void transfer(uint8_t *bytes, int len);
 };
 
 struct af_transport_t {
@@ -58,16 +56,21 @@ void isrWrapper() {
     }
 }
 
-af_transport_t* arduino_spi_create(int chipSelect) {
+af_transport_t* arduino_spi_create(int chipSelect, uint16_t frame_length) {
     af_transport_t *result = new af_transport_t();
-    result->arduinoSPI = new ArduinoSPI(chipSelect);
+    result->arduinoSPI = new ArduinoSPI(chipSelect, frame_length);
     return result;
 }
 
-void arduino_spi_setup_interrupts(af_lib_t* af_lib, int mcuInterrupt) {
+af_lib_error_t arduino_spi_setup_interrupts(af_lib_t* af_lib, int mcuInterrupt) {
+    if (!af_lib) {
+        return AF_ERROR_INVALID_PARAM;
+    }
     s_af_lib = af_lib;
     pinMode(mcuInterrupt, INPUT);
     attachInterrupt(mcuInterrupt, isrWrapper, FALLING);
+
+    return AF_SUCCESS;
 }
 
 void arduino_spi_destroy(af_transport_t *af_transport) {
@@ -87,14 +90,6 @@ int af_transport_write_status_spi(af_transport_t *af_transport, af_status_comman
     return af_transport->arduinoSPI->writeStatus(af_status_command);
 }
 
-void af_transport_send_bytes_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    af_transport->arduinoSPI->sendBytes(bytes, len);
-}
-
-void af_transport_recv_bytes_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t len) {
-    af_transport->arduinoSPI->recvBytes(bytes, len);
-}
-
 void af_transport_send_bytes_offset_spi(af_transport_t *af_transport, uint8_t *bytes, uint16_t *bytes_to_send, uint16_t *offset) {
     af_transport->arduinoSPI->sendBytesOffset(bytes, bytes_to_send, offset);
 }
@@ -103,9 +98,10 @@ void af_transport_recv_bytes_offset_spi(af_transport_t *af_transport, uint8_t **
     af_transport->arduinoSPI->recvBytesOffset(bytes, bytes_len, bytes_to_recv, offset);
 }
 
-ArduinoSPI::ArduinoSPI(int chipSelect)
+ArduinoSPI::ArduinoSPI(int chipSelect, uint16_t frame_length)
 {
     _chipSelect = chipSelect;
+    _frameLength = frame_length;
     _spiSettings = SPISettings(1000000, LSBFIRST, SPI_MODE0);
     begin();
 }
@@ -226,7 +222,7 @@ void ArduinoSPI::sendBytesOffset(uint8_t *bytes, uint16_t *bytesToSend, uint16_t
 {
     uint16_t len = 0;
 
-    len = *bytesToSend > SPI_FRAME_LEN ? SPI_FRAME_LEN : *bytesToSend;
+    len = *bytesToSend > _frameLength ? _frameLength : *bytesToSend;
 
     uint8_t buffer[len];
     memset(buffer, 0xff, sizeof(buffer));
@@ -243,11 +239,11 @@ void ArduinoSPI::recvBytesOffset(uint8_t **bytes, uint16_t *bytesLen, uint16_t *
 {
     uint16_t len = 0;
 
-    len = *bytesToRecv > SPI_FRAME_LEN ? SPI_FRAME_LEN : *bytesToRecv;
+    len = *bytesToRecv > _frameLength ? _frameLength : *bytesToRecv;
 
     if (*offset == 0) {
         *bytesLen = *bytesToRecv;
-        *bytes = new uint8_t[*bytesLen];
+        *bytes = (uint8_t*)malloc(*bytesLen);
     }
 
     uint8_t *start = *bytes + *offset;

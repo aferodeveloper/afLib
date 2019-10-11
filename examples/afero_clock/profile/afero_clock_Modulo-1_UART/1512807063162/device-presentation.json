@@ -1,0 +1,153 @@
+{
+	"active": true,
+	"valid": true,
+	"friendlyName": "Default Presentation",
+	"createdTimestamp": 1546549292787,
+	"deviceProfileId": "92bedfa3-d794-4d2f-bc15-3bdbd2f20d3f",
+	"presentationId": "8178d2b8-66c9-4da5-b3b9-8daf045de273",
+	"presentationDefinition": {
+		"label": "afero_clock_Modulo-1_UART",
+		"attributeOptions": {
+			"1024": {
+				"flags": [
+					"primaryOperation"
+				],
+				"label": "LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "On",
+							"state": "running"
+						},
+						"match": "1"
+					},
+					{
+						"apply": {
+							"label": "Off",
+							"state": "standby"
+						},
+						"match": "0"
+					}
+				]
+			},
+			"1030": {
+				"flags": [],
+				"label": "Button",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "Toggled Off",
+							"state": "standby"
+						},
+						"match": "0"
+					},
+					{
+						"apply": {
+							"label": "Toggled On",
+							"state": "standby"
+						},
+						"match": "1"
+					}
+				]
+			}
+		},
+		"gauge": {
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_wearable1.png"
+					}
+				]
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
+		},
+		"groups": [
+			{
+				"controls": [
+					1
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_modulo_led.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "LED",
+				"id": 1512807333906
+			},
+			{
+				"controls": [
+					2
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_modulo_button.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "Button",
+				"id": 1512807359449
+			}
+		],
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1024
+				},
+				"controlType": "switch",
+				"id": 1,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1030
+				},
+				"controlType": "stringControl",
+				"id": 2,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				]
+			}
+		],
+		"layout": null
+	}
+}

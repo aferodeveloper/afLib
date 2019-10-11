@@ -1,0 +1,13 @@
+{
+	"name": "afBlink Modulo-1 UART",
+	"createDate": 1559231010323,
+	"originalProfileId": "",
+	"latestProfileId": "c4675be9-2cf5-4521-98be-4395594807f5",
+	"presentationProfileList": [
+		"4c48d4e7-1de2-4fe4-b6a2-e67c2ffe029a"
+	],
+	"presentationDirMap": {
+		"4c48d4e7-1de2-4fe4-b6a2-e67c2ffe029a": "a93b2b57-df05-4979-b9d6-75bca43d0aa0"
+	},
+	"apeVersion": "1.7.10"
+}
