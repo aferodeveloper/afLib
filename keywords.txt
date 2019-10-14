@@ -10,7 +10,7 @@ attr_notify_handler_t	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-af_lib_create	KEYWORD2
+af_lib_create_with_unified_callback	KEYWORD2
 af_lib_destroy	KEYWORD2
 af_lib_loop	KEYWORD2
 af_lib_get_attribute	KEYWORD2
@@ -22,6 +22,7 @@ af_lib_set_attribute_64	KEYWORD2
 af_lib_set_attribute_str	KEYWORD2
 af_lib_set_attribute_bytes	KEYWORD2
 af_lib_is_idle	KEYWORD2
+af_lib_sync	KEYWORD2
 af_lib_mcu_isr	KEYWORD2
 
 #######################################

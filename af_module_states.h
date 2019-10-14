@@ -29,6 +29,7 @@ typedef enum {
     AF_MODULE_STATE_UPDATE_READY,
     AF_MODULE_STATE_INITIALIZED,
     AF_MODULE_STATE_RELINKED, // means subsequent relinks
+    AF_MODULE_STATE_FACTORY_RESET, // means ASR has performed a factory reset on itself and requires a reboot by the MCU after it's reset it's own state
 } af_module_states_t;
 
 #ifdef __cplusplus

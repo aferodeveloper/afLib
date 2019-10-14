@@ -1,0 +1,185 @@
+{
+	"active": true,
+	"valid": true,
+	"friendlyName": "Default Presentation",
+	"createdTimestamp": 1570381036780,
+	"deviceProfileId": "0290bf8e-ebde-40e3-9f28-f0e6a71ea1bc",
+	"presentationId": "6763eabb-6458-4342-89db-f172dbd5eece",
+	"presentationDefinition": {
+		"label": "full_api_example_Modulo-1_UART",
+		"attributeOptions": {
+			"1": {
+				"flags": [],
+				"label": "Test Attribute",
+				"valueOptions": null,
+				"rangeOptions": {
+					"minValue": "0",
+					"maxValue": "10",
+					"stepValue": "1",
+					"unitLabel": null
+				}
+			},
+			"1024": {
+				"flags": [],
+				"label": "Modulo LED",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "off",
+							"state": "standby"
+						},
+						"match": "0"
+					},
+					{
+						"apply": {
+							"label": "on",
+							"state": "running"
+						},
+						"match": "1"
+					}
+				]
+			},
+			"1030": {
+				"flags": [],
+				"label": "Modulo Button",
+				"valueOptions": [
+					{
+						"apply": {
+							"label": "off",
+							"state": "standby"
+						},
+						"match": "0"
+					},
+					{
+						"apply": {
+							"label": "on",
+							"state": "standby"
+						},
+						"match": "1"
+					}
+				]
+			}
+		},
+		"gauge": {
+			"foreground": {
+				"images": [
+					{
+						"uri": "device_icon_triangle.png"
+					}
+				]
+			},
+			"background": {
+				"images": []
+			},
+			"displayRules": []
+		},
+		"groups": [
+			{
+				"controls": [
+					1
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_unknown.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "MCU Attributes",
+				"id": 1
+			},
+			{
+				"controls": [
+					2,
+					3
+				],
+				"gauge": {
+					"background": {
+						"images": []
+					},
+					"displayRules": [],
+					"foreground": {
+						"images": [
+							{
+								"uri": "device_control_icon_unknown.png"
+							}
+						]
+					},
+					"label": "",
+					"labelSize": ""
+				},
+				"groups": [],
+				"label": "ASR Attributes",
+				"id": 2
+			}
+		],
+		"controls": [
+			{
+				"attributeMap": {
+					"value": 1
+				},
+				"controlType": "slider",
+				"id": 1,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				],
+				"automationAttributes": [
+					1
+				]
+			},
+			{
+				"attributeMap": {
+					"value": 1024
+				},
+				"controlType": "switch",
+				"id": 2,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "INLINE",
+							"inputType": "DEFAULT"
+						}
+					}
+				],
+				"automationAttributes": null
+			},
+			{
+				"attributeMap": {
+					"value": 1030
+				},
+				"controlType": "switch",
+				"id": 3,
+				"displayRules": [
+					{
+						"match": "*",
+						"apply": {
+							"enabled": true,
+							"viewStyle": "POPUP",
+							"inputType": "DEFAULT"
+						}
+					}
+				],
+				"automationAttributes": null
+			}
+		],
+		"layout": null
+	}
+}

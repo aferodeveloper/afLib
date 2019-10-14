@@ -68,9 +68,9 @@ static int str_to_value(char *valueStr, uint8_t *value) {
 }
 
 
-void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, uint8_t *bytes) {
+void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, uint8_t *bytes, uint8_t protocol_version) {
     int index = 0;
-    memset(af_command, 0, sizeof(af_command_t)); 
+    memset(af_command, 0, sizeof(af_command_t));
 
     af_command->cmd = bytes[index++];
     af_command->request_id = bytes[index++];
@@ -89,6 +89,13 @@ void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, u
         af_command->reason = bytes[index++];
         return;
     }
+    if (protocol_version < 2) {
+        if (MSG_TYPE_UPDATE_REJECTED_V1 == af_command->cmd) {
+            af_command->state = bytes[index++];
+            af_command->reason = bytes[index++];
+            return;
+        }
+    }
 
     af_command->value_len = bytes[index + 0] | bytes[index + 1] << 8;
     index += 2;
@@ -97,10 +104,10 @@ void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, u
 }
 
 void af_command_initialize_from_string(af_command_t *af_command, uint8_t request_id, const char *str) {
-    char *cp; 
+    char *cp;
     char *tok;
 
-    cp = strdup(str); 
+    cp = strdup(str);
     tok = strtok(cp, " ");
 
     memset(af_command, 0, sizeof(af_command_t));
@@ -139,7 +146,7 @@ void af_command_initialize_with_value(af_command_t *af_command, uint8_t request_
     memcpy(af_command->value, value, af_command->value_len);
 }
 
-void af_command_initialize_with_status(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id, uint8_t state, uint8_t reason, uint16_t value_len, uint8_t *value) {
+void af_command_initialize_with_status(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id, uint8_t state, uint8_t reason, uint16_t value_len, uint8_t *value, bool mcu_started) {
     memset(af_command, 0, sizeof(af_command_t));
     af_command->request_id = request_id;
     af_command->cmd = cmd;
@@ -148,6 +155,7 @@ void af_command_initialize_with_status(af_command_t *af_command, uint8_t request
     af_command->reason = reason;
     af_command->value_len = value_len;
     af_command->value = (uint8_t*)malloc(af_command->value_len);
+    af_command->mcu_started = mcu_started;
     memcpy(af_command->value, value, af_command->value_len);
 }
 
@@ -235,6 +243,10 @@ uint8_t af_command_get_state(af_command_t *af_command) {
     return af_command->state;
 }
 
+bool af_command_get_mcu_started(af_command_t *af_command) {
+    return af_command->mcu_started;
+}
+
 bool af_command_is_valid(af_command_t *af_command) {
     return (MSG_TYPE_SET == af_command->cmd) || (MSG_TYPE_GET == af_command->cmd) || (MSG_TYPE_UPDATE == af_command->cmd);
 }
@@ -255,15 +267,15 @@ void af_command_dump(af_command_t *af_command) {
 
 void af_command_dump_bytes(af_command_t *af_command) {
     uint16_t len = af_command_get_size(af_command);
-    uint8_t *bytes = malloc(len); 
+    uint8_t *bytes = malloc(len);
     uint16_t size_so_far;
     int i = 0;
-    
+
     if (bytes == NULL) {
     	af_logger_println_buffer("af_command_dump_bytes: malloc failed");
     	return;
     }
-    
+
     af_command_get_bytes(af_command, bytes);
 
     memset(af_command->print_buf, 0, MAX_PRINT_BUFFER);
@@ -273,7 +285,7 @@ void af_command_dump_bytes(af_command_t *af_command) {
         sprintf(af_command->print_buf + size_so_far + i, "%02x", af_command->value[i]);
     }
     af_logger_println_buffer(af_command->print_buf);
-    
+
     free(bytes);
 }
 

@@ -65,6 +65,8 @@
 
 // afLib needs to tell the ASR what capabilities it supports via the below attribute when it starts up
 #define ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES      (ATTRIBUTE_ID_DEVICE_MCU_START + 6) // 1207
+#define ATTRIBUTE_ID_DEVICE_MCU_DEVICE_PROTOCOL_VERSION (ATTRIBUTE_ID_DEVICE_MCU_START + 7) // 1208
+#define ATTRIBUTE_ID_DEVICE_MCU_AFLIB_PROTOCOL_VERSION  (ATTRIBUTE_ID_DEVICE_MCU_START + 8) // 1209
 
 #define ATTRIBUTE_ID_TUNNELED_DEVICE_MCU_START  0x0515   // 1301
 #define ATTRIBUTE_ID_TUNNELED_DEVICE_MCU_END    0x0578   // 1400
@@ -81,6 +83,8 @@
 #define STATE_RECV_BYTES                    5
 #define STATE_CMD_COMPLETE                  6
 #define STATE_WAITING_FOR_SET_RESPONSE      7
+
+#define AFLIB_MCU_PROCOCOL_VERSION          2
 
 #define MAX_SYNC_RETRIES    10
 static long last_sync = 0;
@@ -138,6 +142,8 @@ struct af_lib_t {
     long attr_set_request_time;
 
     long last_command_send_time;
+
+    uint16_t asr_protocol_version;
 };
 
 AF_QUEUE_DECLARE(s_request_queue, sizeof(request_t), AF_LIB_REQUEST_QUEUE_SIZE);
@@ -173,9 +179,6 @@ static void queue_init(af_lib_t *af_lib) {
 static af_lib_error_t queue_put(af_lib_t *af_lib, uint8_t message_type, uint8_t request_id, uint16_t attribute_id, uint16_t value_len, const uint8_t *value, const uint8_t status, const uint8_t reason) {
     queue_t volatile *p_q = &s_request_queue;
 
-    if (af_lib->asr_rebooting) {
-        return AF_ERROR_ASR_REBOOTING;
-    }
     // We need to make sure we leave at least one spot in our queue to handle the response from a server set
     if (af_lib->state != STATE_WAITING_FOR_SET_RESPONSE && AF_QUEUE_GET_NUM_AVAILABLE(p_q) <= 1) {
         return AF_ERROR_QUEUE_OVERFLOW; // We're basically "full" now
@@ -370,7 +373,7 @@ static int af_lib_do_update_attribute(af_lib_t *af_lib, uint8_t request_id, uint
     }
 
     af_lib->write_cmd = (af_command_t*)malloc(sizeof(af_command_t));
-    af_command_initialize_with_status(af_lib->write_cmd, request_id, MSG_TYPE_UPDATE, attr_id, status, reason, value_len, value);
+    af_command_initialize_with_status(af_lib->write_cmd, request_id, MSG_TYPE_UPDATE, attr_id, status, reason, value_len, value, true);
     if (!af_command_is_valid(af_lib->write_cmd)) {
         af_logger_print_buffer("af_lib_do_update_attribute invalid command:");
         af_command_dump_bytes(af_lib->write_cmd);
@@ -592,7 +595,7 @@ static void af_lib_on_state_recv_bytes(af_lib_t *af_lib) {
         af_lib->state = STATE_CMD_COMPLETE;
         print_state(af_lib->state);
         af_lib->read_cmd = (af_command_t*)malloc(sizeof(af_command_t));
-        af_command_initialize_from_buffer(af_lib->read_cmd, af_lib->read_buffer_len, &af_lib->read_buffer[2]);
+        af_command_initialize_from_buffer(af_lib->read_cmd, af_lib->read_buffer_len, &af_lib->read_buffer[2], af_lib->asr_protocol_version);
         //_readCmd->dumpBytes();
         free(af_lib->read_buffer);
         af_lib->read_buffer = NULL;
@@ -637,20 +640,39 @@ static void af_lib_handle_attr_notify(af_lib_t *af_lib, af_command_t *command) {
     if (af_lib->event_handler != NULL) {
         af_lib_event_type_t event = AF_LIB_EVENT_UNKNOWN;
         af_lib_error_t error = af_lib_convert_state_to_error(af_command_get_state(command));
+        bool old_default_msg = false;
 
-        if (af_command_get_reason(command) == UPDATE_REASON_MCU_SET) {
+        if (af_command_get_mcu_started(command) && IS_ATTRIBUTE_MCU(attribute_id)) {
+            event = AF_LIB_EVENT_MCU_SET_REQ_SENT;
+        } else if (af_command_get_reason(command) == UPDATE_REASON_MCU_SET) {
             event = AF_LIB_EVENT_ASR_SET_RESPONSE;
         } else if (af_command_get_reason(command) == UPDATE_REASON_GET_RESPONSE ) {
-            event = AF_LIB_EVENT_ASR_GET_RESPONSE;
+            event = AF_LIB_EVENT_GET_RESPONSE;
         } else if (af_command_get_reason(command) == UPDATE_REASON_REBOOTED && IS_ATTRIBUTE_MCU(attribute_id)) {
-            event = AF_LIB_EVENT_MCU_DEFAULT_NOTIFICATION;
-        } else if (af_command_get_reason(command) == UPDATE_REASON_LOCAL_OR_MCU_UPDATE && IS_ATTRIBUTE_MCU(attribute_id)) {
-            event = AF_LIB_EVENT_MCU_SET_REQ_SENT;
+            // Old ASRs that don't support the MCU v2 protocol will still send this message to indicate a default value.  Starting in aflib4 we only send this message
+            // for attributes with actual non-empty default values - so we need to check that here.  Also, the contract with aflib4 is that the ASR will ask (via the get msg)
+            // for any attribute that it wants a value for - clearly the old ASR won't be doing that so we need to create one of those events here as well.
+            if (af_lib->asr_protocol_version < 2) {
+                if (value_len != 0) {
+                    event = AF_LIB_EVENT_MCU_DEFAULT_NOTIFICATION;
+                    old_default_msg = true;
+                } else {
+                    event = AF_LIB_EVENT_MCU_GET_REQUEST;
+                    error = AF_SUCCESS;
+                }
+            } else {
+                af_logger_println_buffer("Unexpected msg from ASR supporting MCU protocol v2!!!");
+            }
         } else {
             event = AF_LIB_EVENT_ASR_NOTIFICATION;
         }
 
         af_lib->event_handler(event, error, attribute_id, value_len, value);
+
+        // After we've sent off this message if it's an old default msg then we need to also ask for the current value
+        if (old_default_msg) {
+            af_lib->event_handler(AF_LIB_EVENT_MCU_GET_REQUEST, AF_SUCCESS, attribute_id, 0, NULL);
+        }
     } else {
         af_lib->attr_notify_handler(af_command_get_req_id(command), attribute_id, value_len, value);
     }
@@ -666,7 +688,7 @@ static void af_lib_asr_initialization_complete(af_lib_t *af_lib) {
 
         // When we start up we need to tell the ASR our capabilities
         uint8_t our_capability = 0;
-        af_lib_set_attribute_bytes(af_lib, ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES, sizeof(our_capability), &our_capability);
+        af_lib_set_attribute_bytes(af_lib, ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES, sizeof(our_capability), &our_capability, AF_LIB_SET_REASON_LOCAL_CHANGE);
 
         // When we start up we need to get the ASR capabilities and cache them internally
         af_lib_get_attribute(af_lib, AF_ATTRIBUTE_ID_ASR_CAPABILITIES);
@@ -724,24 +746,37 @@ static void af_lib_on_state_cmd_complete(af_lib_t *af_lib) {
                 // If the attr update is a "fake" update, don't send it to the MCU
                 if (af_command_get_reason(af_lib->read_cmd) != UPDATE_REASON_FAKE_UPDATE) {
                     // If this is the AF_ATTRIBUTE_ID_ASR_CAPABILITIES then cache the value internally so we can use it later on
-                    if (AF_ATTRIBUTE_ID_ASR_CAPABILITIES == af_command_get_attr_id(af_lib->read_cmd) && NULL == af_lib->asr_capability) {
+                    uint16_t attr_id = af_command_get_attr_id(af_lib->read_cmd);
+                    if (AF_ATTRIBUTE_ID_ASR_CAPABILITIES == attr_id && NULL == af_lib->asr_capability) {
                         af_lib->asr_capability_length = af_command_get_value_len(af_lib->read_cmd);
                         af_lib->asr_capability = (uint8_t*)malloc(af_lib->asr_capability_length);
                         memcpy(af_lib->asr_capability, val, af_lib->asr_capability_length);
                     }
+                    if (ATTRIBUTE_ID_DEVICE_MCU_DEVICE_PROTOCOL_VERSION == attr_id) {
+                        af_lib->asr_protocol_version = af_utils_read_little_endian_16(val);
+                        // Now we need to send up our protocol version
+                        uint16_t our_protocol_version = AFLIB_MCU_PROCOCOL_VERSION;
+                        af_logger_print_buffer("ASR protocol version: ");
+                        af_logger_println_value(af_lib->asr_protocol_version);
+                        af_lib->asr_rebooting = false; // This will actually let the message out, we'll revert back to the the "true" value once we get the update message from the ASR
+                        af_lib_set_attribute_16(af_lib, ATTRIBUTE_ID_DEVICE_MCU_AFLIB_PROTOCOL_VERSION, our_protocol_version, AF_LIB_SET_REASON_LOCAL_CHANGE);
+                    }
+                    if (ATTRIBUTE_ID_DEVICE_MCU_AFLIB_PROTOCOL_VERSION == attr_id) {
+                        af_lib->asr_rebooting = true; // Now we're back to our normal selves and have to wait for the ASR state
+                    }
 
-                    if (af_command_get_attr_id(af_lib->read_cmd) == af_lib->outstanding_set_get_attr_id) {
+                    if (attr_id == af_lib->outstanding_set_get_attr_id) {
                         af_lib->outstanding_set_get_attr_id = 0;
                     }
 
-                    if (AFLIB_SYSTEM_APPLICATION_VERSION == af_command_get_attr_id(af_lib->read_cmd)) {
+                    if (AFLIB_SYSTEM_APPLICATION_VERSION == attr_id) {
                         s_asr_version = af_utils_read_little_endian_64(af_command_get_value_pointer(af_lib->read_cmd));
                         if (s_asr_states != 0 && s_asr_version != 0) {
                             af_lib_asr_initialization_complete(af_lib);
                         }
                     }
 
-                    if (AF_SYSTEM_ASR_STATE_ATTR_ID == af_command_get_attr_id(af_lib->read_cmd)) {
+                    if (AF_SYSTEM_ASR_STATE_ATTR_ID == attr_id) {
                         uint8_t *value = (uint8_t*)af_command_get_value_pointer(af_lib->read_cmd);
                         if (value != NULL) {
                             s_asr_states |= (1 << value[0]);
@@ -751,8 +786,20 @@ static void af_lib_on_state_cmd_complete(af_lib_t *af_lib) {
                         }
                     }
 
-                    // If this is the internal ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES then don't tell the MCU since this is used for internal book keeping between afLib and the ASR
-                    if (af_command_get_attr_id(af_lib->read_cmd) != ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES) {
+                    bool hide_from_mcu = false;
+                    switch (attr_id) {
+                        // If this is the internal ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES or the protocol versions then don't tell the MCU since this is used for internal book keeping between afLib and the ASR
+                        case ATTRIBUTE_ID_DEVICE_MCU_AFLIB_CAPABILITIES:
+                        case ATTRIBUTE_ID_DEVICE_MCU_AFLIB_PROTOCOL_VERSION:
+                        case ATTRIBUTE_ID_DEVICE_MCU_DEVICE_PROTOCOL_VERSION:
+                            hide_from_mcu = true;
+                            break;
+                        default:
+                            hide_from_mcu = false;
+                            break;
+                    }
+
+                    if (!hide_from_mcu) {
                         static bool inNotifyHandler;
                         if (!inNotifyHandler) {
                             inNotifyHandler = true;
@@ -769,7 +816,31 @@ static void af_lib_on_state_cmd_complete(af_lib_t *af_lib) {
                     af_lib->event_handler(AF_LIB_EVENT_MCU_SET_REQ_REJECTION, af_lib_convert_state_to_error(af_command_get_state(af_lib->read_cmd)), af_command_get_attr_id(af_lib->read_cmd), af_command_get_value_len(af_lib->read_cmd), val);
                 }
                 break;
+
+            case MSG_TYPE_GET:
+                if (af_lib->event_handler != NULL) {
+                    af_lib->event_handler(AF_LIB_EVENT_MCU_GET_REQUEST, AF_SUCCESS, af_command_get_attr_id(af_lib->read_cmd), 0, NULL);
+                }
+                break;
+
+            case MSG_TYPE_SET_DEFAULT:
+                if (af_lib->event_handler != NULL) {
+                    af_lib->event_handler(AF_LIB_EVENT_MCU_DEFAULT_NOTIFICATION, AF_SUCCESS, af_command_get_attr_id(af_lib->read_cmd), af_command_get_value_len(af_lib->read_cmd), val);
+                }
+                break;
+
             default:
+                if (af_lib->asr_protocol_version < 2) {
+                    // We changed some of the values for the msg types in 2, so let's see if it's one of the old ones...
+                    if (MSG_TYPE_UPDATE_REJECTED_V1 == command) {
+                        if (af_lib->event_handler != NULL) {
+                            af_lib->event_handler(AF_LIB_EVENT_MCU_SET_REQ_REJECTION, af_lib_convert_state_to_error(af_command_get_state(af_lib->read_cmd)), af_command_get_attr_id(af_lib->read_cmd), af_command_get_value_len(af_lib->read_cmd), val);
+                        }
+                        break;
+                    }
+                }
+                af_logger_print_buffer("Unhandled msg type: ");
+                af_logger_println_value(command);
                 break;
         }
         free(val);
@@ -794,7 +865,7 @@ static void af_lib_on_state_cmd_complete(af_lib_t *af_lib) {
         }
 
         // Fake a callback here for MCU attributes as we don't get one from the module - but only if the it was started by the MCU calling one of the af_lib_set_attribute* calls
-        if (af_command_get_command(af_lib->write_cmd) == MSG_TYPE_UPDATE && IS_ATTRIBUTE_MCU(af_command_get_attr_id(af_lib->write_cmd)) && UPDATE_REASON_LOCAL_OR_MCU_UPDATE == af_command_get_reason(af_lib->write_cmd)) {
+        if (af_command_get_command(af_lib->write_cmd) == MSG_TYPE_UPDATE && IS_ATTRIBUTE_MCU(af_command_get_attr_id(af_lib->write_cmd)) && af_command_get_mcu_started(af_lib->write_cmd)) {
             af_lib_handle_attr_notify(af_lib, af_lib->write_cmd);
             last_complete = af_utils_millis();
         }
@@ -891,6 +962,17 @@ static void af_lib_run_state_machine(af_lib_t *af_lib) {
     }
 }
 
+static uint8_t af_lib_set_reason_converter(af_lib_t *af_lib, af_lib_set_reason_t reason) {
+    switch (reason) {
+        case AF_LIB_SET_REASON_GET_RESPONSE:
+            return af_lib->asr_protocol_version < 2 ? UPDATE_REASON_LOCAL_OR_MCU_UPDATE : UPDATE_REASON_GET_RESPONSE;
+        case AF_LIB_SET_REASON_LOCAL_CHANGE:
+            return UPDATE_REASON_LOCAL_OR_MCU_UPDATE;
+        default:
+            return UPDATE_REASON_LOCAL_OR_MCU_UPDATE;
+    }
+}
+
 /****************************************************************************
  *                              Public Methods                              *
  ****************************************************************************/
@@ -914,6 +996,7 @@ af_lib_t* af_lib_create(attr_set_handler_t attr_set, attr_notify_handler_t attr_
     af_lib->asr_capability = NULL;
     af_lib->asr_capability_length = 0;
     af_lib->asr_rebooting = true;
+    af_lib->asr_protocol_version = 1; // Till we know otherwise...
 
     return af_lib;
 }
@@ -982,46 +1065,46 @@ af_lib_error_t af_lib_get_attribute(af_lib_t *af_lib, const uint16_t attr_id) {
  * These are the public versions of the setAttribute method.
  * These methods queue the operation and return immediately. Applications must call loop() for the operation to complete.
  */
-af_lib_error_t af_lib_set_attribute_bool(af_lib_t *af_lib, const uint16_t attr_id, const bool value) {
+af_lib_error_t af_lib_set_attribute_bool(af_lib_t *af_lib, const uint16_t attr_id, const bool value, af_lib_set_reason_t reason) {
     uint8_t val = value ? 1 : 0;
     af_lib->request_id++;
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(val), (uint8_t *)&val, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(val), (uint8_t *)&val, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_8(af_lib_t *af_lib, const uint16_t attr_id, const int8_t value) {
+af_lib_error_t af_lib_set_attribute_8(af_lib_t *af_lib, const uint16_t attr_id, const int8_t value, af_lib_set_reason_t reason) {
     af_lib->request_id++;
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(value), (uint8_t *)&value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(value), (uint8_t *)&value, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_16(af_lib_t *af_lib, const uint16_t attr_id, const int16_t value) {
+af_lib_error_t af_lib_set_attribute_16(af_lib_t *af_lib, const uint16_t attr_id, const int16_t value, af_lib_set_reason_t reason) {
     uint8_t temp[sizeof(value)];
     af_lib->request_id++;
     af_utils_write_little_endian_16(value, temp);
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_32(af_lib_t *af_lib, const uint16_t attr_id, const int32_t value) {
+af_lib_error_t af_lib_set_attribute_32(af_lib_t *af_lib, const uint16_t attr_id, const int32_t value, af_lib_set_reason_t reason) {
     uint8_t temp[sizeof(value)];
     af_lib->request_id++;
     af_utils_write_little_endian_32(value, temp);
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_64(af_lib_t *af_lib, const uint16_t attr_id, const int64_t value) {
+af_lib_error_t af_lib_set_attribute_64(af_lib_t *af_lib, const uint16_t attr_id, const int64_t value, af_lib_set_reason_t reason) {
     uint8_t temp[sizeof(value)];
     af_lib->request_id++;
     af_utils_write_little_endian_64(value, temp);
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, sizeof(temp), temp, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_str(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const char *value) {
+af_lib_error_t af_lib_set_attribute_str(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const char *value, af_lib_set_reason_t reason) {
     af_lib->request_id++;
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, value_len, (const uint8_t *) value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, value_len, (const uint8_t *) value, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
-af_lib_error_t af_lib_set_attribute_bytes(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const uint8_t *value) {
+af_lib_error_t af_lib_set_attribute_bytes(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const uint8_t *value, af_lib_set_reason_t reason) {
     af_lib->request_id++;
-    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, value_len, value, UPDATE_STATE_UPDATED, UPDATE_REASON_LOCAL_OR_MCU_UPDATE);
+    return queue_put(af_lib, IS_ATTRIBUTE_MCU(attr_id) ? MSG_TYPE_UPDATE : MSG_TYPE_SET, af_lib->request_id, attr_id, value_len, value, UPDATE_STATE_UPDATED, af_lib_set_reason_converter(af_lib, reason));
 }
 
 /**
@@ -1097,6 +1180,7 @@ af_lib_t *af_lib_create_with_unified_callback(af_lib_event_callback_t event_cb, 
     af_lib->asr_capability = NULL;
     af_lib->asr_capability_length = 0;
     af_lib->asr_rebooting = true;
+    af_lib->asr_protocol_version = 1; // Till we know otherwise...
 
     return af_lib;
 }

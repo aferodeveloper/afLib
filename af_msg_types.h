@@ -32,18 +32,19 @@ typedef uint8_t msg_type_t;
 #define MSG_TYPE_ERROR      1
 
 // Messaging channel messages
-#define MESSAGE_CHANNEL_BASE                    10
-#define MSG_TYPE_SET                            (MESSAGE_CHANNEL_BASE + 1)
-#define MSG_TYPE_GET                            (MESSAGE_CHANNEL_BASE + 2)
-#define MSG_TYPE_UPDATE                         (MESSAGE_CHANNEL_BASE + 3)
-#define MSG_TYPE_UPDATE_REJECTED                (MESSAGE_CHANNEL_BASE + 4)
+#define MESSAGE_CHANNEL_BASE                    11
+#define MSG_TYPE_SET                            (MESSAGE_CHANNEL_BASE + 0)
+#define MSG_TYPE_GET                            (MESSAGE_CHANNEL_BASE + 1)
+#define MSG_TYPE_UPDATE                         (MESSAGE_CHANNEL_BASE + 2)
 
-#define NEGOTIATOR_CHANNEL_BASE                 20
-#define MSG_TYPE_AUTHENTICATOR_SESSION_INFO     (NEGOTIATOR_CHANNEL_BASE + 1)
-#define MSG_TYPE_PERIPHERAL_SESSION_INFO        (NEGOTIATOR_CHANNEL_BASE + 2)
-#define MSG_TYPE_SIGNED_SESSION_PUBLIC_KEYS     (NEGOTIATOR_CHANNEL_BASE + 3)
-#define MSG_TYPE_MESSAGING_AVAILABLE            (NEGOTIATOR_CHANNEL_BASE + 4)
-#define MSG_TYPE_PAIRING_COMPLETE               (NEGOTIATOR_CHANNEL_BASE + 5)
+// Only between device and MCU
+#define DEVICE_MCU_BASE                         41
+#define MSG_TYPE_UPDATE_REJECTED                (DEVICE_MCU_BASE + 0)
+#define MSG_TYPE_SET_DEFAULT                    (DEVICE_MCU_BASE + 1)
+#define MSG_TYPE_LAST_VALID_DEVICE_MCU          MSG_TYPE_SET_DEFAULT
+
+// We changed the value in protocol v2 but still need to handle talking to pre-v2 ASRs
+#define MSG_TYPE_UPDATE_REJECTED_V1             14
 
 // Success states
 #define UPDATE_STATE_UPDATED                0

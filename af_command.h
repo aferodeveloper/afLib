@@ -36,13 +36,14 @@ typedef struct {
     uint16_t    value_len;
     uint8_t     *value;
     char        print_buf[MAX_PRINT_BUFFER];
+    bool        mcu_started; // whether or not this command originated on the MCU or not
 } af_command_t;
 
-void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, uint8_t *bytes);
+void af_command_initialize_from_buffer(af_command_t *af_command, uint16_t len, uint8_t *bytes, uint8_t protocol_version);
 void af_command_initialize_from_string(af_command_t *af_command, uint8_t request_id, const char *str);
 void af_command_initialize_with_attr_id(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id);
 void af_command_initialize_with_value(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id, uint16_t value_len, uint8_t *value);
-void af_command_initialize_with_status(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id, uint8_t status, uint8_t reason, uint16_t value_len, uint8_t *value);
+void af_command_initialize_with_status(af_command_t *af_command, uint8_t request_id, uint8_t cmd, uint16_t attr_id, uint8_t status, uint8_t reason, uint16_t value_len, uint8_t *value, bool mcu_started);
 void af_command_initialize(af_command_t *af_command);
 void af_command_cleanup(af_command_t *af_command);
 
@@ -65,6 +66,8 @@ uint16_t af_command_get_bytes(af_command_t *af_command, uint8_t *bytes);
 uint8_t af_command_get_reason(af_command_t *af_command);
 
 uint8_t af_command_get_state(af_command_t *af_command);
+
+bool af_command_get_mcu_started(af_command_t *af_command);
 
 bool af_command_is_valid(af_command_t *af_command);
 

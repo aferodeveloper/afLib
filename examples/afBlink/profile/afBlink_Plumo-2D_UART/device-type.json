@@ -1,0 +1,32 @@
+{
+	"name": "afBlink-Plumo-2D-UART",
+	"description": "This profile is used with the afBlink example applicatrion in the afLib library to demonstrate using an MCU with a Plumo-2D development board.",
+	"createdTimestamp": 1559231376688,
+	"updatedTimestamp": 1563290652187,
+	"deviceTypeId": "",
+	"partnerId": "1da7b817-882e-4074-91b2-ca57255ace0a",
+	"disconnectNotificationLevel": "LOW",
+	"virtual": false,
+	"deviceTags": [],
+	"moduleConfiguration": {
+		"id": "8ff3c5bb-ce28-44f0-913b-4fa52a81117d",
+		"name": "Modulo-2D",
+		"module": {
+			"id": "dbcb58c4-7c81-4524-9f93-9b53c9c4ce08",
+			"name": "ASR-2D",
+			"createdTimestampMs": 1557853725177,
+			"updatedTimestampMs": 1557853725177
+		},
+		"minimumFirmwareVersions": {
+			"2001": "0",
+			"2002": "0",
+			"2003": "0",
+			"2004": "0",
+			"2005": "0",
+			"2006": "0"
+		},
+		"developmentTarget": true,
+		"createdTimestampMs": 1557853849888,
+		"updatedTimestampMs": 1557853849888
+	}
+}

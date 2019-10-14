@@ -103,30 +103,35 @@ void af_lib_loop(af_lib_t *af_lib);
  * af_lib_get_attribute
  *
  * Request the value of an attribute be returned from the ASR.
- * Value will be returned in the attr_notify_handler_t callback or via the AF_LIB_EVENT_ASR_GET_RESPONSE event in the af_lib_event_callback_t.
+ * Value will be returned in the attr_notify_handler_t callback or via the AF_LIB_EVENT_GET_RESPONSE event in the af_lib_event_callback_t.
  */
 af_lib_error_t af_lib_get_attribute(af_lib_t *af_lib, const uint16_t attr_id);
+
+typedef enum {
+    AF_LIB_SET_REASON_LOCAL_CHANGE,     // Set is because of a local change of the attribute value
+    AF_LIB_SET_REASON_GET_RESPONSE,     // Set is in response to an AF_LIB_EVENT_MCU_GET_REQUEST event
+} af_lib_set_reason_t;
 
 /**
  * af_lib_set_attribute_*
  *
  * Request setting an attribute.
- * For MCU attributes, the attribute value will be updated.
+ * For MCU attributes, the attribute value will be updated.  The rebooted param indicates if this set is because the MCU rebooted or just a normal steady state updated value.
  * For non-MCU attributes, the attribute value will be updated, and then attr_notify_handler_t callback or the AF_LIB_EVENT_ASR_SET_RESPONSE event in the af_lib_event_callback_t will be called.
  */
-af_lib_error_t af_lib_set_attribute_bool(af_lib_t *af_lib, const uint16_t attr_id, const bool value);
+af_lib_error_t af_lib_set_attribute_bool(af_lib_t *af_lib, const uint16_t attr_id, const bool value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_8(af_lib_t *af_lib, const uint16_t attr_id, const int8_t value);
+af_lib_error_t af_lib_set_attribute_8(af_lib_t *af_lib, const uint16_t attr_id, const int8_t value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_16(af_lib_t *af_lib, const uint16_t attr_id, const int16_t value);
+af_lib_error_t af_lib_set_attribute_16(af_lib_t *af_lib, const uint16_t attr_id, const int16_t value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_32(af_lib_t *af_lib, const uint16_t attr_id, const int32_t value);
+af_lib_error_t af_lib_set_attribute_32(af_lib_t *af_lib, const uint16_t attr_id, const int32_t value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_64(af_lib_t *af_lib, const uint16_t attr_id, const int64_t value);
+af_lib_error_t af_lib_set_attribute_64(af_lib_t *af_lib, const uint16_t attr_id, const int64_t value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_str(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const char *value);
+af_lib_error_t af_lib_set_attribute_str(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const char *value, af_lib_set_reason_t reason);
 
-af_lib_error_t af_lib_set_attribute_bytes(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const uint8_t *value);
+af_lib_error_t af_lib_set_attribute_bytes(af_lib_t *af_lib, const uint16_t attr_id, const uint16_t value_len, const uint8_t *value, af_lib_set_reason_t reason);
 
 /**
  * af_lib_is_idle
@@ -163,14 +168,14 @@ void af_lib_mcu_isr(af_lib_t *af_lib);
 #define AF_ATTRIBUTE_ID_ASR_CAPABILITIES            1206
 
 /* ASR supports MCU OTA functionality */
-#define AF_ASR_CAPABILITY_MCU_OTA                   0
+#define AF_ASR_CAPABILITY_MCU_OTA                       0
 
 /**
  * af_lib_asr_has_capability
  *
  * This function can be used to check what capabilities ASR has.  Since it can take non zero time for ASR to communicate this
  * capability to afLib, if this function is called too early it will return the AF_ERROR_BUSY error code in which case it should be tried again
- * "at a later time" - ie. once the attribute is present in the AF_LIB_EVENT_ASR_GET_RESPONSE event.
+ * "at a later time" - ie. once the attribute is present in the AF_LIB_EVENT_GET_RESPONSE event.
  *
  * @param af_lib                - an instance of af_lib_t
  * @param af_asr_capability     - a given capability to test
@@ -186,7 +191,8 @@ typedef enum {
     AF_LIB_EVENT_ASR_SET_RESPONSE,         // Response to af_lib_set_attribute() for an ASR attribute
     AF_LIB_EVENT_MCU_SET_REQ_SENT,         // Request from af_lib_set_attribute() for an MCU attribute has been sent to ASR
     AF_LIB_EVENT_MCU_SET_REQ_REJECTION,    // Request from af_lib_set_attribute() for an MCU attribute was rejected by ASR
-    AF_LIB_EVENT_ASR_GET_RESPONSE,         // Response to af_lib_get_attribute()
+    AF_LIB_EVENT_MCU_GET_REQUEST,          // Request from ASR for the current value of a specific MCU attribute
+    AF_LIB_EVENT_GET_RESPONSE,             // Response to af_lib_get_attribute()
     AF_LIB_EVENT_MCU_DEFAULT_NOTIFICATION, // Unsolicited default notification for an MCU attribute
     AF_LIB_EVENT_ASR_NOTIFICATION,         // Unsolicited notification of non-MCU attribute change
     AF_LIB_EVENT_MCU_SET_REQUEST,          // Request from ASR to MCU to set an MCU attribute, requires a call to af_lib_send_set_response()
