@@ -24,7 +24,7 @@ afLib is packaged as an Arduino-compatible library for ease of installing in the
 ### Arduino Installation ###
 
 * If you are familiar with using git, you can use it to clone this directory into your Arduino installation.
-  From a command line, change directories to your Aduino "libraries" folder ("Documents/Arduino/libraries" for Mac, "My Documents/Ardino/libraries" for Windows) and clone this project with "git clone https://github.com/aferodeveloper/afLib4.git"
+  From a command line, change directories to your Aduino "libraries" folder ("Documents/Arduino/libraries" for Mac, "My Documents/Ardino/libraries" for Windows) and clone this project with "git clone https://github.com/aferodeveloper/afLib.git"
 
 * If you don't use git, you can download this project from the "Clone or Download" button at the top of the page, then select "Download ZIP". Unzip the downloaded file "afLib4-master.zip" and it will create a folder called "afLib4-master". *Rename this folder* from "afLib4-master" to just "afLib4", then move it to the Arduino/libraries folder. The folder must be named *afLib4* and not *afLib4-master* for the Arduino sotware to properly recognize it.
 
